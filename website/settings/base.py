@@ -4,12 +4,12 @@ from decouple import config
 from django.utils.translation import gettext_lazy as _
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # Local variables
 SECRET_KEY = config("SECRET_KEY")
-DEBUG = config("DEBUG", cast=bool)
-ALLOWED_HOSTS = config("ALLOWED_HOSTS").split(',')
+DEBUG = config("DEBUG", cast=bool, default=False)
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1").split(',')
 
 EMAIL_BACKEND = config("EMAIL_BACKEND")
 EMAIL_HOST = config("EMAIL_HOST")
@@ -23,11 +23,8 @@ STRIPE_PUBLISHABLE_KEY = config("STRIPE_PUBLISHABLE_KEY")
 STRIPE_SECRET_KEY = config("STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = config("STRIPE_WEBHOOK_SECRET")
 
-PAYPAL_CLIENT_ID = 'your-paypal-client-id'
-PAYPAL_SECRET = 'your-paypal-secret'
-
-#SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT")
-#SECURE_PROXY_SSL_HEADER = config("SECURE_PROXY_SSL_HEADER").split(',')
+PAYPAL_CLIENT_ID = config("PAYPAL_CLIENT_ID", default='your-paypal-client-id')
+PAYPAL_SECRET = config("PAYPAL_SECRET", default='your-paypal-secret')
 
 # Application definition
 INSTALLED_APPS = [
@@ -49,8 +46,8 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    'core.middleware.ForceAdminEnglishMiddleware',  # <— add here
-    'django.middleware.locale.LocaleMiddleware', # <— must come *before* CommonMiddleware
+    'core.middleware.ForceAdminEnglishMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -79,20 +76,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "website.wsgi.application"
 
-
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
-}
-
 # Password validation
-# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
@@ -108,12 +92,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
-# https://docs.djangoproject.com/en/4.2/topics/i18n/
-
-# LANGUAGE_CODE = "en-us"
-LANGUAGE_CODE = 'hr'  # Default frontend language
+LANGUAGE_CODE = 'hr'
 
 LANGUAGES = [
     ('hr', _('Croatian')),
@@ -126,24 +106,19 @@ USE_TZ = True
 
 LOCALE_PATHS = [BASE_DIR / "locale"]
 
-# Keep admin in English
 def gettext_noop(s): return s
 LANGUAGES_BIDI = []
 
 PARLER_LANGUAGES = {
     None: (
         {'code': 'en',},
-        {'code': 'hr',},  # Add your languages
+        {'code': 'hr',},
     ),
     'default': {
         'fallback': 'en',
         'hide_untranslated': False,
     }
 }
-
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 # Media files
 MEDIA_URL = '/media/'
@@ -155,8 +130,4 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
