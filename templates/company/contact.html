@@ -1,0 +1,331 @@
+<!-- contact.html -->
+<!DOCTYPE html>
+{% extends 'company/base.html' %}
+
+{% block title %}Contact Us - VUM Games{% endblock %}
+
+{% block extra_css %}
+<style>
+    .contact-hero {
+        padding: 120px 0 80px;
+    }
+    
+    .contact-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 2.5rem;
+        height: 100%;
+    }
+    
+    .contact-info-item {
+        display: flex;
+        align-items: start;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        background: rgba(0, 102, 255, 0.05);
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+    }
+    
+    .contact-info-item:hover {
+        border-color: rgba(0, 102, 255, 0.3);
+        background: rgba(0, 102, 255, 0.08);
+    }
+    
+    .contact-info-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .contact-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        background: var(--gradient-1);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1.25rem;
+        flex-shrink: 0;
+    }
+    
+    .map-container {
+        border-radius: 20px;
+        overflow: hidden;
+        height: 400px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .faq-item {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        margin-bottom: 1rem;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .faq-item:hover {
+        border-color: rgba(0, 102, 255, 0.3);
+    }
+    
+    .faq-header {
+        padding: 1.5rem;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        user-select: none;
+    }
+    
+    .faq-header:hover {
+        background: rgba(0, 102, 255, 0.05);
+    }
+    
+    .faq-content {
+        padding: 0 1.5rem;
+        max-height: 0;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        color: var(--text-secondary);
+    }
+    
+    .faq-content.active {
+        padding: 0 1.5rem 1.5rem;
+        max-height: 200px;
+    }
+    
+    .faq-icon {
+        transition: transform 0.3s ease;
+        color: var(--primary-color);
+    }
+    
+    .faq-header.active .faq-icon {
+        transform: rotate(180deg);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Contact Hero -->
+<section class="contact-hero">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center">
+                <h1 style="font-size: 3.5rem; font-weight: 900; margin-bottom: 1rem; background: linear-gradient(135deg, #FFFFFF 0%, #A0AEC0 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">{{header.title}}</h1>
+                <p class="lead" style="color: var(--text-secondary); font-size: 1.2rem; max-width: 700px; margin: 0 auto;">{{header.content}}</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Form & Info -->
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4">
+            <!-- Contact Form -->
+            <div class="col-lg-8">
+                <div class="contact-card">
+                    {% with banner=banners.0 %}
+                        <h3 style="color: var(--text-primary); margin-bottom: 2rem; font-weight: 800; font-size: 1.75rem;">
+                            <i class="fas fa-envelope me-2" style="color: var(--primary-color);"></i>
+                            {{banner.title}}
+                        </h3>
+                        
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <label for="{{ form.name.id_for_label }}" class="form-label">
+                                        <i class="fas fa-user me-1"></i>Your Name *
+                                    </label>
+                                    {{ form.name }}
+                                    {% if form.name.errors %}
+                                        <div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label for="{{ form.email.id_for_label }}" class="form-label">
+                                        <i class="fas fa-envelope me-1"></i>Email Address *
+                                    </label>
+                                    {{ form.email }}
+                                    {% if form.email.errors %}
+                                        <div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-12">
+                                    <label for="{{ form.subject.id_for_label }}" class="form-label">
+                                        <i class="fas fa-tag me-1"></i>Subject *
+                                    </label>
+                                    {{ form.subject }}
+                                    {% if form.subject.errors %}
+                                        <div class="text-danger small mt-1">{{ form.subject.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-12">
+                                    <label for="{{ form.message.id_for_label }}" class="form-label">
+                                        <i class="fas fa-comment me-1"></i>Message *
+                                    </label>
+                                    {{ form.message }}
+                                    {% if form.message.errors %}
+                                        <div class="text-danger small mt-1">{{ form.message.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <span><i class="fas fa-paper-plane me-2"></i>{{banner.button1}}</span>
+                                </button>
+                            </div>
+                        </form>
+                    {% endwith %}
+                </div>
+            </div>
+            
+            <!-- Contact Information -->
+            <div class="col-lg-4">
+                <div class="contact-card">
+                    <h4 style="color: var(--text-primary); margin-bottom: 2rem; font-weight: 700;">
+                        <i class="fas fa-info-circle me-2" style="color: var(--primary-color);"></i>
+                        {% with banner=banners.1 %}
+                            {{banner.title}}
+                        {% endwith %}
+                    </h4>
+                    
+                    <div class="contact-info-item">
+                        <div class="contact-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div>
+                            <h6 style="color: var(--text-primary); font-weight: 700; margin-bottom: 0.5rem;">Address</h6>
+                            <p style="color: var(--text-secondary); margin: 0; font-size: 0.95rem;">{{ contact_info.address }}</p>
+                            <p style="color: var(--text-secondary); margin: 0; font-size: 0.95rem;">{{ contact_info.postal_code }}, {{ contact_info.city }}</p>
+                        </div>
+                    </div>
+                    
+                    {% if contact_info.phone %}
+                    <div class="contact-info-item">
+                        <div class="contact-icon">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <div>
+                            <h6 style="color: var(--text-primary); font-weight: 700; margin-bottom: 0.5rem;">Phone</h6>
+                            <p style="margin: 0;">
+                                <a href="tel:{{ contact_info.phone }}" style="color: var(--text-secondary); text-decoration: none; transition: color 0.3s ease;" onmouseover="this.style.color='var(--primary-color)'" onmouseout="this.style.color='var(--text-secondary)'">{{ contact_info.phone }}</a>
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="contact-info-item">
+                        <div class="contact-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div>
+                            <h6 style="color: var(--text-primary); font-weight: 700; margin-bottom: 0.5rem;">Email</h6>
+                            <p style="margin: 0;">
+                                <a href="mailto:{{ contact_info.email }}" style="color: var(--text-secondary); text-decoration: none; transition: color 0.3s ease;" onmouseover="this.style.color='var(--primary-color)'" onmouseout="this.style.color='var(--text-secondary)'">{{ contact_info.email }}</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- Map Section -->
+<!--
+<section class="py-5" style="padding: 100px 0 !important; background: var(--darker-bg);">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h3 class="text-center mb-5" style="color: var(--text-primary); font-weight: 800; font-size: 2.5rem;">Find Us</h3>
+                <div class="map-container">
+                    <div class="text-center p-5">
+                        <i class="fas fa-map-marked-alt fa-4x mb-4" style="color: var(--text-secondary); opacity: 0.5;"></i>
+                        <h5 style="color: var(--text-primary); font-weight: 700; margin-bottom: 1rem;">Interactive Map</h5>
+                        <p style="color: var(--text-secondary); margin-bottom: 2rem;">Located in the heart of Haarlem</p>
+                        <a href="https://maps.google.com/?q=Grote+Markt+1+Haarlem+Netherlands" target="_blank" class="btn btn-primary">
+                            <span><i class="fas fa-external-link-alt me-2"></i>Open in Google Maps</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+-->
+
+<!-- FAQ Section -->
+<section class="py-5" style="padding: 100px 0 !important; background: var(--darker-bg);">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                {% with banner=banners.2 %}
+                    <h3 class="text-center mb-5" style="color: var(--text-primary); font-weight: 800; font-size: 2.5rem;">{{banner.title}}</h3>
+                    {% for faq in faqs %}
+                        <div class="faq-item">
+                            <div class="faq-header" onclick="toggleFaq(this)">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 style="color: var(--text-primary); margin: 0; font-weight: 600;">{{faq.question}}</h6>
+                                    <i class="fas fa-chevron-down faq-icon"></i>
+                                </div>
+                            </div>
+                            <div class="faq-content">
+                                <p style="margin: 0;">{{faq.answer}}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-5" style="padding: 100px 0 !important; background: var(--darker-bg);">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center">
+                {% with banner=banners.3 %}
+                    <h3 style="color: var(--text-primary); font-weight: 800; font-size: 2.5rem; margin-bottom: 1rem;">{{banner.title}}</h3>
+                    <p class="lead mb-4" style="color: var(--text-secondary);">{{banner.content}}</p>
+                    <a href="{% url 'sessions_list' %}" class="btn btn-primary btn-lg">
+                        <span><i class="fas fa-calendar-plus me-2"></i>{{banner.button1}}</span>
+                    </a>
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+function toggleFaq(header) {
+    const content = header.nextElementSibling;
+    const allHeaders = document.querySelectorAll('.faq-header');
+    const allContents = document.querySelectorAll('.faq-content');
+    
+    // Close all other FAQ items
+    allContents.forEach((item, index) => {
+        if (item !== content) {
+            item.classList.remove('active');
+            allHeaders[index].classList.remove('active');
+        }
+    });
+    
+    // Toggle current item
+    content.classList.toggle('active');
+    header.classList.toggle('active');
+}
+</script>
+{% endblock %}

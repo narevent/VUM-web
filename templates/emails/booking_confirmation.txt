@@ -1,0 +1,91 @@
+VUM Games - Booking Confirmation
+
+Dear {{ booking.customer_name }},
+
+Thank you for booking with VUM Games! We're excited to have you join us for an amazing gaming experience.
+
+BOOKING DETAILS:
+Reference: {{ booking.booking_reference }}
+Session: {{ booking.session.name }}
+Date: {{ booking.session.date|date:"l, F d, Y" }}
+Time: {{ booking.session.start_time|time:"H:i" }} - {{ booking.session.end_time|time:"H:i" }}
+Participants: {{ booking.participants }}
+Total: €{{ booking.total_price }}
+
+IMPORTANT INFORMATION:
+- Please arrive 15 minutes before your session starts
+- We'll provide all instruments and equipment
+- Bring comfortable clothes and get ready to have fun!
+- Don't forget to bring your booking reference code
+
+LOCATION:
+VUM Games
+Grote Markt 1
+2011 RD Haarlem, Netherlands
+
+If you have any questions or need to make changes to your booking, please contact us at:
+Phone: +31 (0) 123 456 789
+Email: info@vumgames.nl
+
+We can't wait to see you!
+
+Best regards,
+The VUM Games Team
+
+© 2025 VUM Games. All rights reserved.
+
+<!-- ========================================== -->
+<!-- templates/emails/cash_booking_confirmation.txt -->
+<!-- ========================================== -->
+VUM Games - Booking Confirmed - CASH PAYMENT AT EVENT
+
+Dear {{ booking.customer_name }},
+
+Great news! Your booking with VUM Games has been confirmed!
+
+*** IMPORTANT: CASH PAYMENT REQUIRED ***
+You have selected to pay with CASH at the event.
+Amount to bring: €{{ booking.total_price }}
+
+YOUR BOOKING REFERENCE CODE:
+{{ booking.booking_reference }}
+*** SAVE THIS CODE - YOU MUST SHOW IT AT THE EVENT ***
+
+BOOKING DETAILS:
+Session: {{ booking.session.name }}
+Date: {{ booking.session.date|date:"l, F d, Y" }}
+Time: {{ booking.session.start_time|time:"H:i" }} - {{ booking.session.end_time|time:"H:i" }}
+Participants: {{ booking.participants }}
+Amount Due: €{{ booking.total_price }}
+Payment Method: CASH AT EVENT
+
+IMPORTANT PAYMENT INSTRUCTIONS:
+✓ Arrive 15 minutes early to complete your cash payment
+✓ Bring exactly €{{ booking.total_price }} in Euro cash
+✓ Show your booking reference code: {{ booking.booking_reference }}
+✓ Payment is required BEFORE entering the gaming session
+✓ We accept Euro (€) cash only - no cards at the venue
+
+WHAT TO BRING:
+- Your booking reference code ({{ booking.booking_reference }})
+- €{{ booking.total_price }} in cash
+- Comfortable clothes
+- Your enthusiasm and energy!
+
+LOCATION:
+VUM Games
+Grote Markt 1
+2011 RD Haarlem, Netherlands
+
+REMINDER: If you cannot pay at the event, please contact us at least 24 hours in advance to arrange an alternative payment method.
+
+Questions? Contact us:
+Phone: +31 (0) 123 456 789
+Email: info@vumgames.nl
+
+See you soon! Don't forget your cash!
+
+Best regards,
+The VUM Games Team
+
+© 2025 VUM Games. All rights reserved.

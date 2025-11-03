@@ -1,0 +1,253 @@
+<!-- about.html -->
+<!DOCTYPE html>
+{% extends 'company/base.html' %}
+
+{% block title %}About Us - VUM Games{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero" style="padding: 120px 0 80px;">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 style="font-size: 3.5rem; font-weight: 900; margin-bottom: 1.5rem; background: linear-gradient(135deg, #FFFFFF 0%, #A0AEC0 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">{{header.title}}</h1>
+                <p class="lead" style="color: var(--text-secondary); font-size: 1.2rem;">{{header.content}}</p>
+            </div>
+            <div class="col-lg-6 text-center">
+                <div style="width: 200px; height: 200px; border-radius: 50%; background: var(--gradient-1); opacity: 0.2; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                    <i class="fas fa-music" style="font-size: 6rem; opacity: 0.5; color: white;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Mission Section -->
+<section class="py-5" style="padding: 100px 0 !important;">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                {% with banner=banners.0 %}
+                    <h2 class="section-title">{{banner.title}}</h2>
+                    <p class="section-subtitle" style="max-width: 800px; margin: 0 auto;">
+                        {{banner.content}}
+                    </p>
+                {% endwith %}
+            </div>
+        </div>
+        
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-4">
+                <div style="padding: 2.5rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 20px; height: 100%; text-align: center; transition: all 0.4s ease;" onmouseover="this.style.transform='translateY(-8px)'; this.style.borderColor='rgba(0, 102, 255, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='var(--border-color)'">
+                    <div style="width: 80px; height: 80px; border-radius: 20px; background: rgba(0, 102, 255, 0.1); border: 1px solid rgba(0, 102, 255, 0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                        <i class="fas fa-lightbulb fa-2x" style="color: var(--primary-color);"></i>
+                    </div>
+                    {% with banner=banners.1 %}
+                        <h4 style="color: var(--text-primary); margin-bottom: 1rem; font-weight: 700;">{{banner.title}}</h4>
+                        <p style="color: var(--text-secondary);">{{banner.content}}</p>
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="py-5" style="padding: 100px 0 !important; background: var(--darker-bg);">
+    <div class="container">
+        <div class="row text-center g-4">
+            {% for stat in stats %}
+                <div class="col-md-3">
+                    <div style="padding: 2rem;">
+                        <h2 style="font-size: 4rem; font-weight: 900; color: var(--primary-color); margin-bottom: 0.5rem;">{{ stat.count }}+</h2>
+                        <p style="color: var(--text-secondary); font-size: 1.1rem; font-weight: 600; margin: 0;">{{ stat.name }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Team Section -->
+<section class="py-5" style="padding: 100px 0 !important;">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                {% with banner=banners.2 %}
+                    <h2 class="section-title">{{banner.title}}</h2>
+                    <p class="section-subtitle">{{banner.content}}</p>
+                {% endwith %}
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            {% for member in team_members %}
+                <div class="col-lg-4">
+                    <div class="card text-center">
+                        <div class="card-body" style="padding: 2.5rem;">
+                            <div class="team-avatar mb-3">
+                                <div style="width: 120px; height: 120px; border-radius: 50%; background: rgba(0, 102, 255, 0.1); border: 2px solid rgba(0, 102, 255, 0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                                    <i class="fas fa-user fa-3x" style="color: var(--primary-color);"></i>
+                                </div>
+                            </div>
+                            <h5 class="card-title" style="color: var(--text-primary); font-weight: 700; margin-bottom: 0.5rem;">{{ member.name }}</h5>
+                            <p style="color: var(--primary-color); font-weight: 600; margin-bottom: 1rem;">{{ member.role }}</p>
+                            <p class="card-text" style="color: var(--text-secondary);">{{ member.bio }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Story Section -->
+<section class="py-5" style="padding: 100px 0 !important; background: var(--darker-bg);">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-10 mx-auto">
+                <div class="text-center mb-5">
+                    {% with banner=banners.3 %}
+                        <h2 class="section-title">{{banner.title}}</h2>
+                    {% endwith %}
+                </div>
+                
+                <div class="story-content">
+                    {% for story in stories %}
+                        <div class="row {% if not forloop.last %}mb-5{% endif %}">
+                            {% if forloop.counter0|divisibleby:2 %}
+                                <!-- Even rows: Text left, Icon panel right -->
+                                <div class="col-md-6">
+                                    <div style="padding: 2rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 20px; height: 100%;">
+                                        <h4 style="color: var(--text-primary); font-weight: 700; margin-bottom: 1rem;">{{ story.title }}</h4>
+                                        <p style="color: var(--text-secondary); line-height: 1.7;">
+                                            {{ story.content }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div style="padding: 2.5rem; background: {% cycle 'var(--gradient-1)' 'var(--gradient-3)' 'var(--gradient-2)' %}; border-radius: 20px; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                                        <i class="{{ story.icon|default:'fas fa-star' }} fa-4x mb-3" style="color: white;"></i>
+                                        <h5 style="color: white; font-weight: 700; margin-bottom: 0.5rem;">{{ story.highlight_title }}</h5>
+                                        <p style="color: rgba(255, 255, 255, 0.9); margin: 0;">{{ story.highlight_text }}</p>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <!-- Odd rows: Icon panel left, Text right -->
+                                <div class="col-md-6 order-md-2">
+                                    <div style="padding: 2rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 20px; height: 100%;">
+                                        <h4 style="color: var(--text-primary); font-weight: 700; margin-bottom: 1rem;">{{ story.title }}</h4>
+                                        <p style="color: var(--text-secondary); line-height: 1.7;">
+                                            {{ story.content }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 order-md-1">
+                                    <div style="padding: 2.5rem; background: {% cycle 'var(--gradient-1)' 'var(--gradient-3)' 'var(--gradient-2)' %}; border-radius: 20px; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                                        <i class="{{ story.icon|default:'fas fa-star' }} fa-4x mb-3" style="color: white;"></i>
+                                        <h5 style="color: white; font-weight: 700; margin-bottom: 0.5rem;">{{ story.highlight_title }}</h5>
+                                        <p style="color: rgba(255, 255, 255, 0.9); margin: 0;">{{ story.highlight_text }}</p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Values Section -->
+<section class="py-5" style="padding: 100px 0 !important;">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                {% with banner=banners.4 %}
+                    <h2 class="section-title">{{banner.title}}</h2>
+                {% endwith %}
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            {% for principle in principles %}
+                <div class="col-md-6 col-lg-3">
+                    <div style="padding: 2rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 20px; text-align: center; height: 100%; transition: all 0.4s ease;" onmouseover="this.style.transform='translateY(-8px)'; this.style.borderColor='rgba(0, 102, 255, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='var(--border-color)'">
+                        <div style="width: 60px; height: 60px; border-radius: 12px; background: rgba(0, 102, 255, 0.1); border: 1px solid rgba(0, 102, 255, 0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                            <i class="{{principle.icon}} fa-2x" style="color: {% cycle 'var(--accent-color)' '#00B894' 'var(--primary-color)' '#00B894' %};"></i>
+                        </div>
+                        <h5 style="color: var(--text-primary); font-weight: 700; margin-bottom: 0.75rem;">{{principle.title}}</h5>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">{{principle.content}}</p>
+                    </div>
+                </div>
+            {% endfor %}
+            <!--
+            <div class="col-md-6 col-lg-3">
+                <div style="padding: 2rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 20px; text-align: center; height: 100%; transition: all 0.4s ease;" onmouseover="this.style.transform='translateY(-8px)'; this.style.borderColor='rgba(0, 102, 255, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='var(--border-color)'">
+                    <div style="width: 60px; height: 60px; border-radius: 12px; background: rgba(0, 102, 255, 0.1); border: 1px solid rgba(0, 102, 255, 0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                        <i class="fas fa-handshake fa-2x" style="color: var(--primary-color);"></i>
+                    </div>
+                    <h5 style="color: var(--text-primary); font-weight: 700; margin-bottom: 0.75rem;">Inclusivity</h5>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">Everyone can enjoy our games, regardless of musical skill level</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div style="padding: 2rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 20px; text-align: center; height: 100%; transition: all 0.4s ease;" onmouseover="this.style.transform='translateY(-8px)'; this.style.borderColor='rgba(0, 217, 255, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='var(--border-color)'">
+                    <div style="width: 60px; height: 60px; border-radius: 12px; background: rgba(0, 217, 255, 0.1); border: 1px solid rgba(0, 217, 255, 0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                        <i class="fas fa-sync fa-2x" style="color: var(--secondary-color);"></i>
+                    </div>
+                    <h5 style="color: var(--text-primary); font-weight: 700; margin-bottom: 0.75rem;">Innovation</h5>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">Constantly evolving and improving our gaming experiences</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div style="padding: 2rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 20px; text-align: center; height: 100%; transition: all 0.4s ease;" onmouseover="this.style.transform='translateY(-8px)'; this.style.borderColor='rgba(255, 51, 102, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='var(--border-color)'">
+                    <div style="width: 60px; height: 60px; border-radius: 12px; background: rgba(255, 51, 102, 0.1); border: 1px solid rgba(255, 51, 102, 0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                        <i class="fas fa-smile fa-2x" style="color: var(--accent-color);"></i>
+                    </div>
+                    <h5 style="color: var(--text-primary); font-weight: 700; margin-bottom: 0.75rem;">Fun First</h5>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">Every decision is made with player enjoyment in mind</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div style="padding: 2rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 20px; text-align: center; height: 100%; transition: all 0.4s ease;" onmouseover="this.style.transform='translateY(-8px)'; this.style.borderColor='rgba(0, 184, 148, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='var(--border-color)'">
+                    <div style="width: 60px; height: 60px; border-radius: 12px; background: rgba(0, 184, 148, 0.1); border: 1px solid rgba(0, 184, 148, 0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                        <i class="fas fa-leaf fa-2x" style="color: #00B894;"></i>
+                    </div>
+                    <h5 style="color: var(--text-primary); font-weight: 700; margin-bottom: 0.75rem;">Sustainability</h5>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">Committed to environmentally responsible practices</p>
+                </div>
+            </div>
+            -->
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-5" style="padding: 100px 0 !important;">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 24px; padding: 4rem 2rem; text-align: center; position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--gradient-1); opacity: 0.05; pointer-events: none;"></div>
+                    <div style="position: relative; z-index: 1;">
+                        {% with banner=banners.5 %}
+                            <h2 class="section-title" style="margin-bottom: 1rem;">{{banner.title}}</h2>
+                            <p class="section-subtitle" style="margin-bottom: 2rem;">{{banner.content}}</p>
+                        
+                            <div class="d-flex gap-3 justify-content-center flex-wrap">
+                                <a href="{% url 'sessions_list' %}" class="btn btn-primary btn-lg">
+                                    <span><i class="fas fa-calendar-plus me-2"></i>{{banner.button1}}</span>
+                                </a>
+                                <a href="{% url 'contact' %}" class="btn btn-secondary btn-lg">
+                                    <i class="fas fa-envelope me-2"></i>{{banner.button2}}
+                                </a>
+                            </div>
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

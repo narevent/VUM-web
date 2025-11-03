@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .email-wrapper {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+        .header {
+            background: linear-gradient(135deg, #0066FF 0%, #00D9FF 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+            font-weight: 800;
+        }
+        .header p {
+            margin: 0;
+            font-size: 16px;
+            opacity: 0.95;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .content h2 {
+            color: #0066FF;
+            font-size: 22px;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+        .booking-info {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        .booking-info h3 {
+            color: #333;
+            font-size: 18px;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .label {
+            font-weight: 600;
+            color: #666;
+        }
+        .value {
+            color: #333;
+            font-weight: 500;
+            text-align: right;
+        }
+        .bank-details {
+            background: #fff;
+            border: 2px solid #0066FF;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        .bank-details h3 {
+            color: #0066FF;
+            font-size: 18px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        .bank-detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .bank-detail-row:last-child {
+            border-bottom: none;
+        }
+        .bank-label {
+            font-weight: 600;
+            color: #666;
+            font-size: 14px;
+        }
+        .bank-value {
+            font-family: 'Courier New', Courier, monospace;
+            color: #0066FF;
+            font-weight: 700;
+            font-size: 14px;
+            text-align: right;
+        }
+        .amount-highlight {
+            font-size: 20px !important;
+            color: #0066FF;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .warning-box strong {
+            color: #856404;
+            font-size: 16px;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .warning-box p {
+            margin: 0;
+            color: #856404;
+            font-size: 14px;
+        }
+        .info-box {
+            background: rgba(0, 102, 255, 0.05);
+            border: 1px solid #0066FF;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .info-box p {
+            margin: 0;
+            color: #333;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .reference-code {
+            background: #0066FF;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 20px;
+            font-weight: 700;
+            text-align: center;
+            margin: 15px 0;
+            letter-spacing: 2px;
+        }
+        .footer {
+            background: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e0e0e0;
+        }
+        .footer p {
+            margin: 5px 0;
+            color: #666;
+            font-size: 14px;
+        }
+        .footer a {
+            color: #0066FF;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .button {
+            display: inline-block;
+            background: #0066FF;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            margin: 20px 0;
+        }
+        @media only screen and (max-width: 600px) {
+            .content {
+                padding: 30px 20px;
+            }
+            .header {
+                padding: 30px 20px;
+            }
+            .detail-row {
+                flex-direction: column;
+                gap: 5px;
+            }
+            .value {
+                text-align: left;
+            }
+            .bank-detail-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+            .bank-value {
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="header">
+            <h1>🏦 Bank Transfer Instructions</h1>
+            <p>Booking Reference: {{ booking.booking_reference }}</p>
+        </div>
+        
+        <div class="content">
+            <h2>Thank you for your booking! 🎮</h2>
+            <p>Your booking has been created successfully. To complete your reservation, please transfer the payment to our bank account using the details below.</p>
+            
+            <div class="booking-info">
+                <h3>📋 Booking Details</h3>
+                <div class="detail-row">
+                    <span class="label">Session:</span>
+                    <span class="value">{{ booking.session.name }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Date:</span>
+                    <span class="value">{{ booking.session.date|date:"l, F d, Y" }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Time:</span>
+                    <span class="value">{{ booking.session.start_time|time:"H:i" }} - {{ booking.session.end_time|time:"H:i" }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Participants:</span>
+                    <span class="value">{{ booking.participants }} {% if booking.participants == 1 %}person{% else %}people{% endif %}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Customer Name:</span>
+                    <span class="value">{{ booking.customer_name }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Email:</span>
+                    <span class="value">{{ booking.customer_email }}</span>
+                </div>
+                <div class="detail-row" style="border-top: 2px solid #0066FF; margin-top: 10px; padding-top: 15px;">
+                    <span class="label" style="font-size: 16px;">Total Amount:</span>
+                    <span class="value amount-highlight">€{{ booking.total_price }}</span>
+                </div>
+            </div>
+            
+            <div class="bank-details">
+                <h3>💳 Bank Transfer Details</h3>
+                <div class="bank-detail-row">
+                    <span class="bank-label">Bank Name:</span>
+                    <span class="bank-value">Your Bank Name</span>
+                </div>
+                <div class="bank-detail-row">
+                    <span class="bank-label">Account Holder:</span>
+                    <span class="bank-value">VUM Games d.o.o.</span>
+                </div>
+                <div class="bank-detail-row">
+                    <span class="bank-label">IBAN:</span>
+                    <span class="bank-value">HR1234567890123456789</span>
+                </div>
+                <div class="bank-detail-row">
+                    <span class="bank-label">SWIFT/BIC:</span>
+                    <span class="bank-value">BANKHR22</span>
+                </div>
+                <div class="bank-detail-row" style="border-top: 2px solid #0066FF; margin-top: 10px; padding-top: 15px;">
+                    <span class="bank-label" style="font-size: 16px;">Amount to Transfer:</span>
+                    <span class="bank-value amount-highlight">€{{ booking.total_price }}</span>
+                </div>
+            </div>
+            
+            <div class="warning-box">
+                <strong>⚠️ IMPORTANT - Payment Reference</strong>
+                <p>Please include this booking reference in your payment description/reference field. This helps us identify your payment quickly:</p>
+                <div class="reference-code">{{ booking.booking_reference }}</div>
+            </div>
+            
+            <div class="info-box">
+                <p><strong>📅 What happens next?</strong></p>
+                <p style="margin-top: 10px;">
+                    • Your booking will be confirmed once we receive your payment<br>
+                    • Processing usually takes 1-2 business days<br>
+                    • We will send you a confirmation email once payment is verified<br>
+                    • Keep this email for your records
+                </p>
+            </div>
+            
+            <h3 style="color: #333; margin-top: 40px;">Need Help?</h3>
+            <p>If you have any questions about your booking or payment, please don't hesitate to contact us:</p>
+            <p style="margin: 15px 0;">
+                📧 Email: <a href="mailto:info@vumgames.com" style="color: #0066FF; text-decoration: none; font-weight: 600;">info@vumgames.com</a><br>
+                📞 Phone: +385 XX XXX XXXX
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p style="font-weight: 600; color: #333; margin-bottom: 15px;">VUM Games</p>
+            <p>Your Premium Gaming Experience</p>
+            <p style="margin-top: 15px;">
+                <a href="https://vumgames.com">Visit Our Website</a>
+            </p>
+            <p style="margin-top: 20px; font-size: 12px; color: #999;">
+                This is an automated email. Please do not reply directly to this message.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

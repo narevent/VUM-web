@@ -1,0 +1,259 @@
+<!-- templates/emails/booking_confirmation.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Confirmation</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #0A0E1A;
+            color: #FFFFFF;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #0F1524;
+            border: 1px solid #1E293B;
+        }
+        .header {
+            background: linear-gradient(135deg, #0066FF 0%, #00D9FF 100%);
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 800;
+            color: #FFFFFF;
+        }
+        .header p {
+            margin: 10px 0 0;
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #E2E8F0;
+        }
+        .intro {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            color: #94A3B8;
+        }
+        .details-box {
+            background-color: rgba(0, 102, 255, 0.05);
+            border: 1px solid #1E293B;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        .details-box h2 {
+            margin: 0 0 20px;
+            font-size: 20px;
+            font-weight: 700;
+            color: #0066FF;
+            border-bottom: 2px solid #1E293B;
+            padding-bottom: 10px;
+        }
+        .detail-row {
+            display: flex;
+            padding: 12px 0;
+            border-bottom: 1px solid #1E293B;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #94A3B8;
+            width: 140px;
+            flex-shrink: 0;
+        }
+        .detail-value {
+            color: #E2E8F0;
+            font-weight: 500;
+        }
+        .reference-box {
+            background: linear-gradient(135deg, #0066FF 0%, #00D9FF 100%);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .reference-box p {
+            margin: 0 0 8px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        .reference-code {
+            font-size: 32px;
+            font-weight: 800;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+            color: #FFFFFF;
+        }
+        .info-section {
+            background-color: rgba(0, 217, 255, 0.05);
+            border: 1px solid #1E293B;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .info-section h3 {
+            margin: 0 0 15px;
+            font-size: 18px;
+            font-weight: 700;
+            color: #00D9FF;
+        }
+        .info-section ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #94A3B8;
+        }
+        .info-section ul li {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        .location-box {
+            background-color: rgba(255, 193, 7, 0.05);
+            border: 1px solid rgba(255, 193, 7, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .location-box h3 {
+            margin: 0 0 15px;
+            font-size: 18px;
+            font-weight: 700;
+            color: #FFC107;
+        }
+        .location-box p {
+            margin: 5px 0;
+            color: #E2E8F0;
+            line-height: 1.6;
+        }
+        .footer {
+            background-color: #060912;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #1E293B;
+        }
+        .footer p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #64748B;
+        }
+        .footer a {
+            color: #0066FF;
+            text-decoration: none;
+        }
+        .btn {
+            display: inline-block;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #0066FF 0%, #00D9FF 100%);
+            color: #FFFFFF;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 Booking Confirmed!</h1>
+            <p>Get Ready for an Epic Gaming Experience</p>
+        </div>
+        
+        <div class="content">
+            <p class="greeting">Dear {{ booking.customer_name }},</p>
+            
+            <p class="intro">
+                Thank you for booking with VUM Games! We're excited to have you join us for an amazing gaming experience. 
+                Your booking has been confirmed and we can't wait to see you!
+            </p>
+            
+            <div class="reference-box">
+                <p>Your Booking Reference</p>
+                <div class="reference-code">{{ booking.booking_reference }}</div>
+            </div>
+            
+            <div class="details-box">
+                <h2>📋 Booking Details</h2>
+                <div class="detail-row">
+                    <span class="detail-label">Session:</span>
+                    <span class="detail-value">{{ booking.session.name }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Date:</span>
+                    <span class="detail-value">{{ booking.session.date|date:"l, F d, Y" }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Time:</span>
+                    <span class="detail-value">{{ booking.session.start_time|time:"H:i" }} - {{ booking.session.end_time|time:"H:i" }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Participants:</span>
+                    <span class="detail-value">{{ booking.participants }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Total Amount:</span>
+                    <span class="detail-value" style="font-size: 20px; color: #00D9FF;">€{{ booking.total_price }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Payment Status:</span>
+                    <span class="detail-value" style="color: #10B981;">✓ Confirmed</span>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h3>📌 Important Information</h3>
+                <ul>
+                    <li>Please arrive <strong>15 minutes before</strong> your session starts</li>
+                    <li>We'll provide all instruments and equipment</li>
+                    <li>Bring comfortable clothes and get ready to have fun!</li>
+                    <li>Don't forget to bring your booking reference code</li>
+                </ul>
+            </div>
+            
+            <div class="location-box">
+                <h3>📍 Location</h3>
+                <p><strong>VUM Games</strong></p>
+                <p>Grote Markt 1</p>
+                <p>2011 RD Haarlem</p>
+                <p>Netherlands</p>
+            </div>
+            
+            <p style="color: #94A3B8; font-size: 14px; line-height: 1.6;">
+                If you have any questions or need to make changes to your booking, please don't hesitate to contact us:
+            </p>
+            <p style="color: #E2E8F0; margin: 10px 0;">
+                📞 <strong>Phone:</strong> +31 (0) 123 456 789<br>
+                📧 <strong>Email:</strong> <a href="mailto:info@vumgames.nl" style="color: #0066FF;">info@vumgames.nl</a>
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p style="font-size: 16px; color: #E2E8F0; margin-bottom: 15px;">
+                <strong>We can't wait to see you! 🎮</strong>
+            </p>
+            <p>Best regards,</p>
+            <p><strong>The VUM Games Team</strong></p>
+            <p style="margin-top: 20px; font-size: 12px;">
+                © 2025 VUM Games. All rights reserved.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

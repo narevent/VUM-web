@@ -1,0 +1,321 @@
+<!-- ========================================== -->
+<!-- templates/emails/cash_booking_confirmation.html -->
+<!-- ========================================== -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Confirmed - Cash Payment</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #0A0E1A;
+            color: #FFFFFF;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #0F1524;
+            border: 1px solid #1E293B;
+        }
+        .header {
+            background: linear-gradient(135deg, #FFC107 0%, #FF9800 100%);
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 800;
+            color: #000000;
+        }
+        .header p {
+            margin: 10px 0 0;
+            font-size: 16px;
+            color: rgba(0, 0, 0, 0.8);
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #E2E8F0;
+        }
+        .intro {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            color: #94A3B8;
+        }
+        .cash-alert {
+            background: linear-gradient(135deg, #FFC107 0%, #FF9800 100%);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .cash-alert h2 {
+            margin: 0 0 10px;
+            font-size: 24px;
+            font-weight: 800;
+            color: #000000;
+        }
+        .cash-alert p {
+            margin: 5px 0;
+            font-size: 16px;
+            color: rgba(0, 0, 0, 0.9);
+            line-height: 1.6;
+        }
+        .cash-amount {
+            font-size: 48px;
+            font-weight: 900;
+            color: #000000;
+            margin: 15px 0;
+        }
+        .details-box {
+            background-color: rgba(0, 102, 255, 0.05);
+            border: 1px solid #1E293B;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        .details-box h2 {
+            margin: 0 0 20px;
+            font-size: 20px;
+            font-weight: 700;
+            color: #0066FF;
+            border-bottom: 2px solid #1E293B;
+            padding-bottom: 10px;
+        }
+        .detail-row {
+            display: flex;
+            padding: 12px 0;
+            border-bottom: 1px solid #1E293B;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #94A3B8;
+            width: 140px;
+            flex-shrink: 0;
+        }
+        .detail-value {
+            color: #E2E8F0;
+            font-weight: 500;
+        }
+        .reference-box {
+            background-color: rgba(255, 193, 7, 0.1);
+            border: 2px solid #FFC107;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .reference-box p {
+            margin: 0 0 8px;
+            font-size: 14px;
+            color: #FFC107;
+            font-weight: 600;
+        }
+        .reference-code {
+            font-size: 36px;
+            font-weight: 800;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 3px;
+            color: #FFC107;
+        }
+        .reference-instruction {
+            margin: 15px 0 0;
+            font-size: 14px;
+            color: #94A3B8;
+        }
+        .info-section {
+            background-color: rgba(255, 193, 7, 0.05);
+            border: 1px solid rgba(255, 193, 7, 0.2);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .info-section h3 {
+            margin: 0 0 15px;
+            font-size: 18px;
+            font-weight: 700;
+            color: #FFC107;
+        }
+        .info-section ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #94A3B8;
+        }
+        .info-section ul li {
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+        .info-section ul li strong {
+            color: #E2E8F0;
+        }
+        .reminder-box {
+            background-color: rgba(239, 68, 68, 0.1);
+            border-left: 4px solid #EF4444;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .reminder-box p {
+            margin: 5px 0;
+            color: #FCA5A5;
+            font-weight: 600;
+        }
+        .location-box {
+            background-color: rgba(0, 217, 255, 0.05);
+            border: 1px solid #1E293B;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .location-box h3 {
+            margin: 0 0 15px;
+            font-size: 18px;
+            font-weight: 700;
+            color: #00D9FF;
+        }
+        .location-box p {
+            margin: 5px 0;
+            color: #E2E8F0;
+            line-height: 1.6;
+        }
+        .footer {
+            background-color: #060912;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #1E293B;
+        }
+        .footer p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #64748B;
+        }
+        .footer a {
+            color: #0066FF;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💵 Booking Confirmed - Pay at Event</h1>
+            <p>Your Spot is Reserved!</p>
+        </div>
+        
+        <div class="content">
+            <p class="greeting">Dear {{ booking.customer_name }},</p>
+            
+            <p class="intro">
+                Great news! Your booking with VUM Games has been confirmed. You've selected to pay with cash at the event. 
+                Please read the important payment information below.
+            </p>
+            
+            <div class="cash-alert">
+                <h2>💰 Cash Payment Required</h2>
+                <p>Please bring exactly:</p>
+                <div class="cash-amount">€{{ booking.total_price }}</div>
+                <p><strong>Payment must be made BEFORE the session starts</strong></p>
+            </div>
+            
+            <div class="reference-box">
+                <p>🎫 SHOW THIS CODE AT THE EVENT</p>
+                <div class="reference-code">{{ booking.booking_reference }}</div>
+                <p class="reference-instruction">Screenshot or write down this code - you'll need it!</p>
+            </div>
+            
+            <div class="details-box">
+                <h2>📋 Booking Details</h2>
+                <div class="detail-row">
+                    <span class="detail-label">Session:</span>
+                    <span class="detail-value">{{ booking.session.name }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Date:</span>
+                    <span class="detail-value">{{ booking.session.date|date:"l, F d, Y" }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Time:</span>
+                    <span class="detail-value">{{ booking.session.start_time|time:"H:i" }} - {{ booking.session.end_time|time:"H:i" }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Participants:</span>
+                    <span class="detail-value">{{ booking.participants }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Amount Due:</span>
+                    <span class="detail-value" style="font-size: 20px; color: #FFC107;">€{{ booking.total_price }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Payment Method:</span>
+                    <span class="detail-value" style="color: #FFC107;">💵 Cash at Event</span>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h3>⚠️ Important Payment Instructions</h3>
+                <ul>
+                    <li><strong>Arrive 15 minutes early</strong> to complete your cash payment</li>
+                    <li><strong>Bring exact change if possible</strong> - we may have limited change available</li>
+                    <li><strong>Show your booking reference code</strong> ({{ booking.booking_reference }}) to our staff</li>
+                    <li><strong>Payment is required before entering</strong> the gaming session</li>
+                    <li>We accept Euro (€) cash only - no cards at the venue</li>
+                </ul>
+            </div>
+            
+            <div class="reminder-box">
+                <p>⏰ IMPORTANT REMINDER</p>
+                <p>If you cannot pay at the event, please contact us at least 24 hours in advance to arrange an alternative payment method.</p>
+            </div>
+            
+            <div class="info-section" style="background-color: rgba(0, 217, 255, 0.05); border-color: #1E293B;">
+                <h3>📌 What to Bring</h3>
+                <ul>
+                    <li>Your booking reference code (screenshot this email!)</li>
+                    <li>€{{ booking.total_price }} in cash</li>
+                    <li>Comfortable clothes</li>
+                    <li>Your enthusiasm and energy! 🎮</li>
+                </ul>
+            </div>
+            
+            <div class="location-box">
+                <h3>📍 Location</h3>
+                <p><strong>VUM Games</strong></p>
+                <p>Grote Markt 1</p>
+                <p>2011 RD Haarlem</p>
+                <p>Netherlands</p>
+            </div>
+            
+            <p style="color: #94A3B8; font-size: 14px; line-height: 1.6;">
+                Questions about your booking or payment? We're here to help!
+            </p>
+            <p style="color: #E2E8F0; margin: 10px 0;">
+                📞 <strong>Phone:</strong> +31 (0) 123 456 789<br>
+                📧 <strong>Email:</strong> <a href="mailto:info@vumgames.nl" style="color: #0066FF;">info@vumgames.nl</a>
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p style="font-size: 16px; color: #E2E8F0; margin-bottom: 15px;">
+                <strong>See you soon! Don't forget your cash! 💵</strong>
+            </p>
+            <p>Best regards,</p>
+            <p><strong>The VUM Games Team</strong></p>
+            <p style="margin-top: 20px; font-size: 12px;">
+                © 2025 VUM Games. All rights reserved.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

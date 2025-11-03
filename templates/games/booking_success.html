@@ -1,0 +1,360 @@
+<!-- booking_success.html -->
+<!DOCTYPE html>
+{% extends 'company/base.html' %}
+
+{% block title %}Booking Confirmed - VUM Games{% endblock %}
+
+{% block extra_css %}
+<style>
+    .success-container {
+        background: var(--card-bg);
+        border: 1px solid rgba(0, 217, 255, 0.3);
+        border-radius: 24px;
+        padding: 4rem 2rem;
+        text-align: center;
+        margin: 2rem 0;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .success-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle at 50% 50%, rgba(0, 217, 255, 0.1) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    
+    .success-icon {
+        font-size: 5rem;
+        color: var(--secondary-color);
+        margin-bottom: 1.5rem;
+        animation: checkmark 0.6s ease-in-out;
+        position: relative;
+        z-index: 1;
+    }
+    
+    @keyframes checkmark {
+        0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+        50% { transform: scale(1.2) rotate(0deg); }
+        100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    
+    .booking-details {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 2rem;
+        margin: 2rem 0;
+    }
+    
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.25rem 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .detail-item:last-child {
+        border-bottom: none;
+    }
+    
+    .detail-label {
+        font-weight: 600;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .detail-value {
+        font-weight: 600;
+        color: var(--text-primary);
+        text-align: right;
+    }
+    
+    .reference-number {
+        background: var(--gradient-1);
+        color: white;
+        padding: 1rem 2.5rem;
+        border-radius: 12px;
+        font-size: 1.5rem;
+        font-weight: 800;
+        letter-spacing: 3px;
+        margin: 1.5rem 0;
+        display: inline-block;
+        font-family: 'Courier New', monospace;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .next-steps {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 2rem;
+        margin: 2rem 0;
+    }
+    
+    .step-item {
+        display: flex;
+        align-items: start;
+        margin-bottom: 1.5rem;
+        gap: 1rem;
+    }
+    
+    .step-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .step-number {
+        background: var(--gradient-1);
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        flex-shrink: 0;
+        font-size: 1.1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Success Message -->
+    <div class="success-container">
+        <div class="success-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <h1 style="font-size: 3rem; font-weight: 900; margin-bottom: 1rem; color: var(--text-primary); position: relative; z-index: 1;">Booking Confirmed!</h1>
+        <p class="lead mb-4" style="color: var(--text-secondary); font-size: 1.2rem; position: relative; z-index: 1;">Your gaming session has been successfully booked. Get ready for an amazing experience!</p>
+        
+        <div class="reference-number">
+            <i class="fas fa-ticket-alt me-2"></i>
+            {{ booking.booking_reference }}
+        </div>
+        <p style="color: var(--text-secondary); margin: 0; position: relative; z-index: 1;">Keep this reference number for your records</p>
+    </div>
+    
+    <!-- Booking Details -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="booking-details">
+                <h3 style="color: var(--text-primary); margin-bottom: 2rem; font-weight: 800; font-size: 1.75rem;">
+                    <i class="fas fa-info-circle me-2" style="color: var(--primary-color);"></i>
+                    Booking Details
+                </h3>
+                
+                <div class="detail-item">
+                    <span class="detail-label">
+                        <i class="fas fa-gamepad"></i>Session
+                    </span>
+                    <span class="detail-value">{{ booking.session.name }}</span>
+                </div>
+                
+                <div class="detail-item">
+                    <span class="detail-label">
+                        <i class="fas fa-calendar"></i>Date
+                    </span>
+                    <span class="detail-value">{{ booking.session.date|date:"l, F d, Y" }}</span>
+                </div>
+                
+                <div class="detail-item">
+                    <span class="detail-label">
+                        <i class="fas fa-clock"></i>Time
+                    </span>
+                    <span class="detail-value">{{ booking.session.start_time|time:"H:i" }} - {{ booking.session.end_time|time:"H:i" }}</span>
+                </div>
+                
+                <div class="detail-item">
+                    <span class="detail-label">
+                        <i class="fas fa-tag"></i>Game Type
+                    </span>
+                    <span class="detail-value">{{ booking.session.get_game_type_display }}</span>
+                </div>
+                
+                <div class="detail-item">
+                    <span class="detail-label">
+                        <i class="fas fa-user"></i>Booked by
+                    </span>
+                    <span class="detail-value">{{ booking.customer_name }}</span>
+                </div>
+                
+                <div class="detail-item">
+                    <span class="detail-label">
+                        <i class="fas fa-envelope"></i>Email
+                    </span>
+                    <span class="detail-value">{{ booking.customer_email }}</span>
+                </div>
+                
+                {% if booking.customer_phone %}
+                <div class="detail-item">
+                    <span class="detail-label">
+                        <i class="fas fa-phone"></i>Phone
+                    </span>
+                    <span class="detail-value">{{ booking.customer_phone }}</span>
+                </div>
+                {% endif %}
+                
+                <div class="detail-item">
+                    <span class="detail-label">
+                        <i class="fas fa-users"></i>Participants
+                    </span>
+                    <span class="detail-value">{{ booking.participants }} {% if booking.participants == 1 %}person{% else %}people{% endif %}</span>
+                </div>
+                
+                {% if booking.special_requests %}
+                <div class="detail-item">
+                    <span class="detail-label">
+                        <i class="fas fa-comment"></i>Special Requests
+                    </span>
+                    <span class="detail-value">{{ booking.special_requests }}</span>
+                </div>
+                {% endif %}
+                
+                <div class="detail-item">
+                    <span class="detail-label">
+                        <i class="fas fa-euro-sign"></i>Total Price
+                    </span>
+                    <span class="detail-value">
+                        <strong style="color: var(--primary-color); font-size: 2rem;">€{{ booking.total_price }}</strong>
+                    </span>
+                </div>
+                
+                <div class="detail-item">
+                    <span class="detail-label">
+                        <i class="fas fa-info-circle"></i>Status
+                    </span>
+                    <span class="detail-value">
+                        <span class="status-{{ booking.status }}">
+                            {% if booking.status == 'confirmed' %}
+                                <i class="fas fa-check-circle me-1"></i>Confirmed
+                            {% elif booking.status == 'pending' %}
+                                <i class="fas fa-clock me-1"></i>Pending Confirmation
+                            {% endif %}
+                        </span>
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Next Steps -->
+        <div class="col-lg-4">
+            <div class="next-steps">
+                <h4 style="color: var(--text-primary); margin-bottom: 1.5rem; font-weight: 700;">
+                    <i class="fas fa-list-check me-2" style="color: var(--primary-color);"></i>
+                    What's Next?
+                </h4>
+                
+                <div class="step-item">
+                    <div class="step-number">1</div>
+                    <div>
+                        <strong style="color: var(--text-primary); display: block; margin-bottom: 0.5rem;">Confirmation Email</strong>
+                        <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;">You'll receive a confirmation email within 5 minutes with all the details.</p>
+                    </div>
+                </div>
+                
+                <div class="step-item">
+                    <div class="step-number">2</div>
+                    <div>
+                        <strong style="color: var(--text-primary); display: block; margin-bottom: 0.5rem;">Arrive Early</strong>
+                        <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;">Please arrive 15 minutes before your session starts for setup and briefing.</p>
+                    </div>
+                </div>
+                
+                <div class="step-item">
+                    <div class="step-number">3</div>
+                    <div>
+                        <strong style="color: var(--text-primary); display: block; margin-bottom: 0.5rem;">Bring Your Energy</strong>
+                        <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;">Come ready to have fun and create amazing memories with music and games!</p>
+                    </div>
+                </div>
+                
+                <div class="step-item">
+                    <div class="step-number">4</div>
+                    <div>
+                        <strong style="color: var(--text-primary); display: block; margin-bottom: 0.5rem;">Questions?</strong>
+                        <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;">Contact us at info@vumgames.nl or call us anytime.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-body text-center" style="padding: 2rem;">
+                    <h5 class="card-title" style="color: var(--text-primary); font-weight: 700; margin-bottom: 1rem;">Need to Make Changes?</h5>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">If you need to modify or cancel your booking, please contact us as soon as possible.</p>
+                    <a href="mailto:info@vumgames.nl?subject=Booking Modification - {{ booking.booking_reference }}" class="btn btn-primary w-100">
+                        <span><i class="fas fa-envelope me-2"></i>Contact Us</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="row mt-5">
+        <div class="col-12 text-center">
+            <a href="{% url 'home' %}" class="btn btn-secondary me-3">
+                <i class="fas fa-home me-2"></i>Back to Home
+            </a>
+            <a href="{% url 'sessions_list' %}" class="btn btn-primary">
+                <span><i class="fas fa-calendar-plus me-2"></i>Book Another Session</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+// Add celebration animation
+document.addEventListener('DOMContentLoaded', function() {
+    function createConfetti() {
+        const colors = ['#0066FF', '#00D9FF', '#FF3366', '#FFFFFF'];
+        
+        for (let i = 0; i < 40; i++) {
+            setTimeout(() => {
+                const confetti = document.createElement('div');
+                confetti.style.position = 'fixed';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.top = '-10px';
+                confetti.style.width = '10px';
+                confetti.style.height = '10px';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+                confetti.style.zIndex = '9999';
+                confetti.style.pointerEvents = 'none';
+                confetti.style.animation = 'fall 3s linear forwards';
+                
+                document.body.appendChild(confetti);
+                
+                setTimeout(() => confetti.remove(), 3000);
+            }, i * 80);
+        }
+    }
+    
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fall {
+            0% { 
+                transform: translateY(-100vh) rotate(0deg); 
+                opacity: 1; 
+            }
+            100% { 
+                transform: translateY(100vh) rotate(720deg); 
+                opacity: 0; 
+            }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    setTimeout(createConfetti, 300);
+});
+</script>
+{% endblock %}
