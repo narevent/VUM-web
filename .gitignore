@@ -9,7 +9,7 @@ staticfiles/
 
 # Environments
 .env
-.production
+.env.production
 venv/
 env/
 
