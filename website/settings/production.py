@@ -27,5 +27,8 @@ SECURE_HSTS_PRELOAD = True
 # Trust proxy headers from nginx
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# CSRF trusted origins (update with your domain)
-CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", default="").split(',')
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in config("CSRF_TRUSTED_ORIGINS", default="").split(",")
+    if origin.strip()
+]
