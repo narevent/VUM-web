@@ -3,6 +3,11 @@ FROM python:3.11-slim
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
+ENV DJANGO_SETTINGS_MODULE=website.settings.production
+
+# Configure DNS64 for IPv6-only networks
+RUN echo "nameserver 2001:4860:4860::8888" > /etc/resolv.conf && \
+    echo "nameserver 2001:4860:4860::8844" >> /etc/resolv.conf
 
 # Set work directory
 WORKDIR /app
@@ -22,10 +27,13 @@ RUN pip install --no-cache-dir gunicorn
 # Copy project
 COPY . .
 
+# Copy environment file for build process
+COPY .env.production .env.production
+
 # Create necessary directories
 RUN mkdir -p /app/staticfiles /app/media
 
-# Collect static files
+# Collect static files (now it can read .env.production)
 RUN python manage.py collectstatic --noinput
 
 # Create a non-root user
