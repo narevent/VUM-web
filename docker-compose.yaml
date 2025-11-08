@@ -13,8 +13,6 @@ services:
       - static_volume:/app/staticfiles
     networks:
       - app-network
-    depends_on:
-      - nginx
 
   nginx:
     image: nginx:alpine
