@@ -11,7 +11,7 @@ read -p "Enter your email for Let's Encrypt notifications: " EMAIL
 
 # Obtain SSL certificate
 echo "Obtaining SSL certificate..."
-docker compose -f docker-compose.temp.yml run --rm certbot certonly \
+docker compose -f docker-compose.yaml run --rm certbot certonly \
     --webroot \
     --webroot-path=/var/www/certbot \
     --email $EMAIL \
@@ -95,7 +95,7 @@ EOF
 
 # Stop temporary setup
 echo "Stopping temporary setup..."
-docker compose -f docker-compose.temp.yml down
+docker compose -f docker-compose.yaml down
 
 # Start full setup with HTTPS
 echo "Starting services with HTTPS..."
