@@ -11,7 +11,7 @@ read -p "Enter your email for Let's Encrypt notifications: " EMAIL
 
 # Obtain SSL certificate
 echo "Obtaining SSL certificate..."
-docker-compose -f docker-compose.temp.yml run --rm certbot certonly \
+docker compose -f docker-compose.temp.yml run --rm certbot certonly \
     --webroot \
     --webroot-path=/var/www/certbot \
     --email $EMAIL \
@@ -25,7 +25,7 @@ if [ $? -ne 0 ]; then
     echo "Make sure:"
     echo "1. Your domain DNS is pointing to this server"
     echo "2. Ports 80 and 443 are open in your firewall"
-    echo "3. Your app is running (docker-compose ps should show services up)"
+    echo "3. Your app is running (docker compose ps should show services up)"
     exit 1
 fi
 
@@ -95,11 +95,11 @@ EOF
 
 # Stop temporary setup
 echo "Stopping temporary setup..."
-docker-compose -f docker-compose.temp.yml down
+docker compose -f docker-compose.temp.yml down
 
 # Start full setup with HTTPS
 echo "Starting services with HTTPS..."
-docker-compose up -d
+docker compose up -d
 
 # Wait for services to start
 echo "Waiting for services to start..."
@@ -108,7 +108,7 @@ sleep 10
 # Check status
 echo ""
 echo "=== Service Status ==="
-docker-compose ps
+docker compose ps
 
 echo ""
 echo "=== HTTPS Setup Complete! ==="
@@ -120,13 +120,13 @@ if curl -k -f https://localhost:443 > /dev/null 2>&1; then
     echo "✓ HTTPS is working!"
 else
     echo "⚠ HTTPS may not be responding yet. Check logs with:"
-    echo "  docker-compose logs nginx"
+    echo "  docker compose logs nginx"
 fi
 
 echo ""
 echo "SSL certificates will auto-renew every 12 hours via the certbot container."
 echo ""
 echo "Useful commands:"
-echo "  docker-compose ps          # Check service status"
-echo "  docker-compose logs -f     # View all logs"
-echo "  docker-compose restart     # Restart all services"
+echo "  docker compose ps          # Check service status"
+echo "  docker compose logs -f     # View all logs"
+echo "  docker compose restart     # Restart all services"

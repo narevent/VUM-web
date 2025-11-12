@@ -39,7 +39,7 @@ sudo apt install -y git
 # Verify installations
 echo "=== Verifying installations ==="
 docker --version
-docker-compose --version
+docker compose --version
 git --version
 
 echo ""

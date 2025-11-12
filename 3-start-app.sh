@@ -15,7 +15,7 @@ fi
 
 # Stop any running containers
 echo "Stopping any existing containers..."
-docker-compose down 2>/dev/null || true
+docker compose down 2>/dev/null || true
 
 # Remove the certbot service temporarily for initial setup
 echo "Creating temporary docker-compose file for initial setup..."
@@ -61,10 +61,10 @@ EOF
 
 # Build and start services
 echo "Building Docker images (this may take a few minutes)..."
-docker-compose -f docker-compose.temp.yml build --no-cache
+docker compose -f docker-compose.temp.yml build --no-cache
 
 echo "Starting services..."
-docker-compose -f docker-compose.temp.yml up -d
+docker compose -f docker-compose.temp.yml up -d
 
 # Wait for services to start
 echo "Waiting for services to start..."
@@ -73,7 +73,7 @@ sleep 10
 # Check if services are running
 echo ""
 echo "=== Service Status ==="
-docker-compose -f docker-compose.temp.yml ps
+docker compose -f docker-compose.temp.yml ps
 
 # Test the application
 echo ""
@@ -84,7 +84,7 @@ if curl -f http://localhost:80 > /dev/null 2>&1; then
     echo "✓ Application is running!"
 else
     echo "⚠ Application may not be responding yet. Check logs with:"
-    echo "  docker-compose -f docker-compose.temp.yml logs web"
+    echo "  docker compose -f docker-compose.temp.yml logs web"
 fi
 
 echo ""
@@ -92,6 +92,6 @@ echo "=== Application Started ==="
 echo "Your app should be accessible at: http://vumgames.com"
 echo ""
 echo "To view logs:"
-echo "  docker-compose -f docker-compose.temp.yml logs -f web"
+echo "  docker compose -f docker-compose.temp.yml logs -f web"
 echo ""
 echo "Next step: Run 4-setup-https.sh to enable HTTPS"
