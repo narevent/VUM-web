@@ -3,7 +3,7 @@ FROM python:3.11-slim
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
-ENV DJANGO_SETTINGS_MODULE=website.settings.production
+ENV DJANGO_ENVIRONMENT=production
 
 # Set work directory
 WORKDIR /app
@@ -23,14 +23,12 @@ RUN pip install --no-cache-dir gunicorn
 # Copy project
 COPY . .
 
-# Copy environment file for build process
-COPY .env.production .env.production
-
 # Create necessary directories
 RUN mkdir -p /app/staticfiles /app/media
 
-# Collect static files (now it can read .env.production)
-RUN python manage.py collectstatic --noinput
+# Collect static files (will use environment variables from docker-compose)
+# Note: .env.production will be mounted as volume, so we skip collectstatic here
+# It will be run in the startup script or via docker-compose exec
 
 # Create a non-root user
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app

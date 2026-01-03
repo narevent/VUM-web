@@ -7,12 +7,18 @@ services:
     restart: unless-stopped
     env_file:
       - .env.production
+    environment:
+      - DJANGO_ENVIRONMENT=production
     volumes:
       - ./db.sqlite3:/app/db.sqlite3
       - ./media:/app/media
       - static_volume:/app/staticfiles
     networks:
       - app-network
+    command: >
+      sh -c "python manage.py collectstatic --noinput &&
+             python manage.py migrate --noinput &&
+             gunicorn --bind 0.0.0.0:8000 --workers 3 --timeout 60 website.wsgi:application"
 
   nginx:
     image: nginx:alpine

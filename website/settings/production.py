@@ -14,7 +14,9 @@ DATABASES = {
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Security settings for production
-SECURE_SSL_REDIRECT = True
+# Note: SECURE_SSL_REDIRECT is disabled because nginx handles SSL redirects
+# If nginx is not used, set this to True
+SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", cast=bool, default=False)
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SECURE_BROWSER_XSS_FILTER = True

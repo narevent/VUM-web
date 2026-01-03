@@ -6,8 +6,20 @@ set -e
 
 echo "=== Setting up HTTPS with Let's Encrypt ==="
 
+# Check if app is running
+if ! docker compose ps | grep -q "Up"; then
+    echo "ERROR: Application is not running!"
+    echo "Please run 3-start-app.sh first to start the application."
+    exit 1
+fi
+
 # Get email for Let's Encrypt
 read -p "Enter your email for Let's Encrypt notifications: " EMAIL
+
+if [ -z "$EMAIL" ]; then
+    echo "ERROR: Email is required"
+    exit 1
+fi
 
 # Obtain SSL certificate
 echo "Obtaining SSL certificate..."
@@ -17,6 +29,7 @@ docker compose -f docker-compose.yaml run --rm certbot certonly \
     --email $EMAIL \
     --agree-tos \
     --no-eff-email \
+    --force-renewal \
     -d vumgames.com \
     -d www.vumgames.com
 
@@ -26,14 +39,25 @@ if [ $? -ne 0 ]; then
     echo "1. Your domain DNS is pointing to this server"
     echo "2. Ports 80 and 443 are open in your firewall"
     echo "3. Your app is running (docker compose ps should show services up)"
+    echo "4. The nginx container can access /var/www/certbot"
     exit 1
 fi
 
 echo "SSL certificate obtained successfully!"
 
-# Update nginx config with HTTPS
+# Verify certificate exists
+if [ ! -d "/etc/letsencrypt/live/vumgames.com" ]; then
+    echo "⚠ Warning: Certificate directory not found in host filesystem"
+    echo "Certificate should be in Docker volume: certbot_conf"
+fi
+
+# Update nginx config with HTTPS (use the existing HTTPS config)
 echo "Updating nginx configuration for HTTPS..."
-cat > nginx/conf.d/app.conf << 'EOF'
+if [ -f "nginx/conf.d/app.conf" ] && grep -q "ssl_certificate" nginx/conf.d/app.conf; then
+    echo "✓ HTTPS configuration already exists in app.conf"
+else
+    # Create HTTPS config
+    cat > nginx/conf.d/app.conf << 'EOF'
 # HTTP - redirect all traffic to HTTPS
 server {
     listen 80;
@@ -92,17 +116,15 @@ server {
     }
 }
 EOF
+    echo "✓ HTTPS configuration created"
+fi
 
-# Stop temporary setup
-echo "Stopping temporary setup..."
-docker compose -f docker-compose.yaml down
+# Reload nginx to apply new configuration
+echo "Reloading nginx configuration..."
+docker compose exec nginx nginx -t && docker compose exec nginx nginx -s reload
 
-# Start full setup with HTTPS
-echo "Starting services with HTTPS..."
-docker compose up -d
-
-# Wait for services to start
-echo "Waiting for services to start..."
+# Wait for services to stabilize
+echo "Waiting for services to stabilize..."
 sleep 10
 
 # Check status
@@ -116,11 +138,12 @@ echo "Your site should now be accessible at: https://vumgames.com"
 echo ""
 echo "Testing HTTPS..."
 sleep 5
-if curl -k -f https://localhost:443 > /dev/null 2>&1; then
+if curl -k -f https://localhost:443 > /dev/null 2>&1 || curl -k -f https://vumgames.com > /dev/null 2>&1; then
     echo "✓ HTTPS is working!"
 else
     echo "⚠ HTTPS may not be responding yet. Check logs with:"
     echo "  docker compose logs nginx"
+    echo "  docker compose logs web"
 fi
 
 echo ""
