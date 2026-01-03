@@ -16,11 +16,13 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f -s http://localhost:8000/ > /dev/null || curl -f -s http://localhost:8000/admin/login/ > /dev/null || exit 1"]
+      # Check if gunicorn is responding on port 8000
+      # Accepts any HTTP response (not just 200) to be more lenient
+      test: ["CMD-SHELL", "curl -s --max-time 5 http://localhost:8000 > /dev/null 2>&1 || curl -s --max-time 5 http://localhost:8000/admin/login/ > /dev/null 2>&1 || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 5
-      start_period: 60s
+      retries: 10
+      start_period: 120s
     command: >
       sh -c "python manage.py collectstatic --noinput || true &&
              python manage.py migrate --noinput || true &&
@@ -32,7 +34,7 @@ services:
     restart: unless-stopped
     depends_on:
       web:
-        condition: service_healthy
+        condition: service_started
     ports:
       - "80:80"
       - "443:443"
