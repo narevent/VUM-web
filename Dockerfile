@@ -24,15 +24,15 @@ RUN pip install --no-cache-dir gunicorn
 # Copy project
 COPY . .
 
+# Copy entrypoint script and make it executable
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
 # Create necessary directories
 RUN mkdir -p /app/staticfiles /app/media /app/db
 
-# Collect static files (will use environment variables from docker-compose)
-# Note: .env.production will be mounted as volume, so we skip collectstatic here
-# It will be run in the startup script or via docker-compose exec
-
 # Create a non-root user
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app /docker-entrypoint.sh
 USER appuser
 
 # Expose port

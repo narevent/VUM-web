@@ -23,11 +23,7 @@ services:
       timeout: 10s
       retries: 10
       start_period: 120s
-    command: >
-      sh -c "mkdir -p /app/db &&
-             python manage.py collectstatic --noinput || true &&
-             python manage.py migrate --noinput || true &&
-             exec gunicorn --bind 0.0.0.0:8000 --workers 3 --timeout 60 --access-logfile - --error-logfile - website.wsgi:application"
+    entrypoint: ["/docker-entrypoint.sh"]
 
   nginx:
     image: nginx:alpine
