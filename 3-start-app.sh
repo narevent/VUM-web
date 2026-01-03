@@ -39,9 +39,17 @@ else
     echo "⚠ Warning: app-http.conf not found, using existing app.conf"
 fi
 
-# Stop any running containers
+# Stop any running containers and clean up
 echo "Stopping any existing containers..."
 docker compose down 2>/dev/null || true
+
+# Wait a moment for ports to be released
+echo "Waiting for ports to be released..."
+sleep 3
+
+# Force remove any stuck containers
+echo "Cleaning up any stuck containers..."
+docker compose rm -f 2>/dev/null || true
 
 # Build and start services
 echo "Building Docker images (this may take a few minutes)..."

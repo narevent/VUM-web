@@ -23,7 +23,7 @@ services:
       timeout: 10s
       retries: 10
       start_period: 120s
-    entrypoint: ["/docker-entrypoint.sh"]
+    entrypoint: ["/bin/bash", "/docker-entrypoint.sh"]
 
   nginx:
     image: nginx:alpine

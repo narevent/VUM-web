@@ -31,24 +31,36 @@ echo ""
 
 # Check if gunicorn is running
 echo "4. Checking if gunicorn process is running..."
-if docker compose exec -T web ps aux 2>/dev/null | grep -q gunicorn; then
-    echo "✓ Gunicorn is running"
-    docker compose exec -T web ps aux | grep gunicorn
+echo "  Checking all processes..."
+docker compose exec -T web ps aux 2>/dev/null || echo "  Cannot execute commands in container"
+echo ""
+echo "  Looking for gunicorn processes..."
+if docker compose exec -T web sh -c "ps aux | grep -v grep | grep gunicorn" 2>/dev/null; then
+    echo "✓ Gunicorn process found"
 else
-    echo "✗ Gunicorn is NOT running"
+    echo "✗ Gunicorn process NOT found"
     echo ""
-    echo "5. Checking what processes ARE running..."
-    docker compose exec -T web ps aux 2>/dev/null || echo "  Cannot execute commands in container"
+    echo "5. Checking main process (PID 1)..."
+    docker compose exec -T web ps -p 1 -o comm= 2>/dev/null || echo "  Cannot check PID 1"
+    echo "  Main process command:"
+    docker compose exec -T web cat /proc/1/cmdline 2>/dev/null | tr '\0' ' ' || echo "  Cannot read cmdline"
+    echo ""
 fi
 echo ""
 
 # Check port 8000
 echo "6. Checking if port 8000 is listening..."
-if docker compose exec -T web netstat -tlnp 2>/dev/null | grep -q 8000 || docker compose exec -T web ss -tlnp 2>/dev/null | grep -q 8000; then
-    echo "✓ Port 8000 is listening"
-    docker compose exec -T web netstat -tlnp 2>/dev/null | grep 8000 || docker compose exec -T web ss -tlnp 2>/dev/null | grep 8000
+echo "  Using netstat..."
+docker compose exec -T web netstat -tlnp 2>/dev/null | grep 8000 || echo "  netstat: port 8000 not found"
+echo "  Using ss..."
+docker compose exec -T web ss -tlnp 2>/dev/null | grep 8000 || echo "  ss: port 8000 not found"
+echo "  Using lsof..."
+docker compose exec -T web lsof -i :8000 2>/dev/null || echo "  lsof: port 8000 not found or lsof not available"
+echo "  Testing connection from inside container..."
+if docker compose exec -T web sh -c "timeout 2 bash -c '</dev/tcp/127.0.0.1/8000' 2>/dev/null"; then
+    echo "✓ Port 8000 is accepting connections"
 else
-    echo "✗ Port 8000 is NOT listening"
+    echo "✗ Port 8000 is NOT accepting connections"
 fi
 echo ""
 

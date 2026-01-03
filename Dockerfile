@@ -13,6 +13,8 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     gcc \
     curl \
+    lsof \
+    procps \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
