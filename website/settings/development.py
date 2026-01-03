@@ -8,5 +8,3 @@ DATABASES = {
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
-
-# No additional security settings for local development
