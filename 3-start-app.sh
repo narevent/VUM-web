@@ -33,6 +33,9 @@ mkdir -p db
 # Use HTTP-only nginx config for initial setup
 echo "Using HTTP-only nginx configuration..."
 if [ -f "nginx/conf.d/app-http.conf" ]; then
+    # Remove any existing app.conf to avoid duplicate default_server errors
+    rm -f nginx/conf.d/app.conf
+    # Copy HTTP config as the active config
     cp nginx/conf.d/app-http.conf nginx/conf.d/app.conf
     echo "✓ HTTP configuration activated"
 else

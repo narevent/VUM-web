@@ -6,11 +6,21 @@ set -e
 echo "=== Fixing Nginx Configuration ==="
 echo ""
 
-# Ensure HTTP config is active
+# Ensure HTTP config is active and only one config file exists
 echo "1. Activating HTTP-only configuration..."
 if [ -f "nginx/conf.d/app-http.conf" ]; then
+    # Remove any existing app.conf to avoid duplicate default_server
+    if [ -f "nginx/conf.d/app.conf" ]; then
+        rm -f nginx/conf.d/app.conf
+        echo "  Removed old app.conf to avoid conflicts"
+    fi
+    # Copy HTTP config as the active config
     cp nginx/conf.d/app-http.conf nginx/conf.d/app.conf
     echo "✓ HTTP configuration activated"
+    
+    # List all .conf files to verify
+    echo "  Active config files:"
+    ls -1 nginx/conf.d/*.conf 2>/dev/null | sed 's/^/    /'
 else
     echo "✗ app-http.conf not found!"
     exit 1
