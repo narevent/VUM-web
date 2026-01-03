@@ -10,7 +10,7 @@ services:
     environment:
       - DJANGO_ENVIRONMENT=production
     volumes:
-      - ./db.sqlite3:/app/db.sqlite3
+      - ./db:/app/db
       - ./media:/app/media
       - static_volume:/app/staticfiles
     networks:
@@ -24,7 +24,8 @@ services:
       retries: 10
       start_period: 120s
     command: >
-      sh -c "python manage.py collectstatic --noinput || true &&
+      sh -c "mkdir -p /app/db &&
+             python manage.py collectstatic --noinput || true &&
              python manage.py migrate --noinput || true &&
              exec gunicorn --bind 0.0.0.0:8000 --workers 3 --timeout 60 --access-logfile - --error-logfile - website.wsgi:application"
 

@@ -18,6 +18,18 @@ if [ ! -f ".env.production" ]; then
     exit 1
 fi
 
+# Check and migrate database if needed
+if [ -f "db.sqlite3" ] && [ ! -f "db/db.sqlite3" ]; then
+    echo "⚠ Found old database location (db.sqlite3)"
+    echo "  Migrating to new location (db/db.sqlite3)..."
+    mkdir -p db
+    cp db.sqlite3 db/db.sqlite3
+    echo "✓ Database migrated. You can delete db.sqlite3 if you want."
+fi
+
+# Ensure db directory exists
+mkdir -p db
+
 # Use HTTP-only nginx config for initial setup
 echo "Using HTTP-only nginx configuration..."
 if [ -f "nginx/conf.d/app-http.conf" ]; then

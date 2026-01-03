@@ -91,11 +91,18 @@ echo ""
 
 # Check database file
 echo "10. Checking database file..."
-if [ -f "db.sqlite3" ]; then
-    echo "✓ db.sqlite3 exists"
-    echo "  File size: $(du -h db.sqlite3 | cut -f1)"
+if [ -f "db/db.sqlite3" ]; then
+    echo "✓ db/db.sqlite3 exists"
+    echo "  File size: $(du -h db/db.sqlite3 | cut -f1)"
+elif [ -f "db.sqlite3" ]; then
+    echo "⚠ Old db.sqlite3 found in root directory"
+    echo "  Run ./8-migrate-db.sh to migrate to new location (db/db.sqlite3)"
 else
-    echo "⚠ db.sqlite3 does not exist (will be created on first migration)"
+    echo "⚠ db/db.sqlite3 does not exist (will be created on first migration)"
+    if [ ! -d "db" ]; then
+        echo "  Creating db/ directory..."
+        mkdir -p db
+    fi
 fi
 echo ""
 

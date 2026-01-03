@@ -25,7 +25,7 @@ RUN pip install --no-cache-dir gunicorn
 COPY . .
 
 # Create necessary directories
-RUN mkdir -p /app/staticfiles /app/media
+RUN mkdir -p /app/staticfiles /app/media /app/db
 
 # Collect static files (will use environment variables from docker-compose)
 # Note: .env.production will be mounted as volume, so we skip collectstatic here
