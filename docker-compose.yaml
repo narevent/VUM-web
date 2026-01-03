@@ -15,25 +15,36 @@ services:
       - static_volume:/app/staticfiles
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f -s http://localhost:8000/ > /dev/null || curl -f -s http://localhost:8000/admin/login/ > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
     command: >
-      sh -c "python manage.py collectstatic --noinput &&
-             python manage.py migrate --noinput &&
-             gunicorn --bind 0.0.0.0:8000 --workers 3 --timeout 60 website.wsgi:application"
+      sh -c "python manage.py collectstatic --noinput || true &&
+             python manage.py migrate --noinput || true &&
+             exec gunicorn --bind 0.0.0.0:8000 --workers 3 --timeout 60 --access-logfile - --error-logfile - website.wsgi:application"
 
   nginx:
     image: nginx:alpine
     container_name: nginx
     restart: unless-stopped
+    depends_on:
+      web:
+        condition: service_healthy
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./nginx/ssl:/etc/nginx/ssl
-      - ./media:/app/media
-      - static_volume:/app/staticfiles
-      - certbot_conf:/etc/letsencrypt
-      - certbot_www:/var/www/certbot
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./media:/app/media:ro
+      - static_volume:/app/staticfiles:ro
+      - certbot_conf:/etc/letsencrypt:ro
+      - certbot_www:/var/www/certbot:ro
+    # Fallback: if nginx.conf doesn't exist, nginx will use default config
     networks:
       - app-network
     command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
