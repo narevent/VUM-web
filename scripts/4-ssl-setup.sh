@@ -1,8 +1,10 @@
 #!/bin/bash
 set -e
 
-DOMAIN="vumgames.com"
-EMAIL="you@example.com"
+read -p "Domain (example.com): " DOMAIN
+read -p "Email for Let's Encrypt: " EMAIL
+
+docker compose up -d nginx
 
 echo "=== SSL CERTIFICATE SETUP ==="
 
@@ -23,3 +25,4 @@ cp docker/nginx/app.conf.https docker/nginx/app.conf
 docker compose restart nginx
 
 echo "🔒 HTTPS ENABLED"
+
