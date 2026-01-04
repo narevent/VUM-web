@@ -15,13 +15,14 @@ server {
     listen 443 ssl;
     server_name vumgames.com www.vumgames.com;
 
+    # These paths must match the domain you enter in the SSL script
     ssl_certificate /etc/letsencrypt/live/vumgames.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/vumgames.com/privkey.pem;
 
     client_max_body_size 20M;
 
     location / {
-        proxy_pass http://web:8000;
+        proxy_pass http://django;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header X-Forwarded-Proto https;
