@@ -25,10 +25,11 @@ services:
       - "443:443"
     volumes:
       - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      # 👇 THIS LINE WAS MISSING. It links the dynamic config to Nginx.
       - ./docker/nginx/app.conf:/etc/nginx/conf.d/default.conf:ro
       - certbot_conf:/etc/letsencrypt
       - certbot_www:/var/www/certbot
+      # Add this line to ensure nginx has static files
+      - static_volume:/app/staticfiles:ro
     depends_on:
       - web
     networks:
