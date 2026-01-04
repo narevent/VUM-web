@@ -2,8 +2,11 @@ server {
     listen 80;
     server_name vumgames.com www.vumgames.com;
 
+    root /var/www/certbot;
+
     location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
+        allow all;
+        try_files $uri =404;
     }
 
     location / {

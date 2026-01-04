@@ -14,8 +14,7 @@ if [ ! -f ".env.production" ]; then
   echo "⚠️ .env.production not found, creating from example"
   cp .env.production.example .env.production
   echo "❗ EDIT .env.production BEFORE CONTINUING"
-  #exit 1
-#fi
+fi
 
 # Use HTTP-only nginx config
 cp docker/nginx/app.conf.http docker/nginx/app.conf
