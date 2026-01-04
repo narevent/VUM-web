@@ -31,6 +31,8 @@ services:
       - certbot_www:/var/www/certbot
     depends_on:
       - web
+    networks:
+      - app-network
 
   certbot:
     image: certbot/certbot

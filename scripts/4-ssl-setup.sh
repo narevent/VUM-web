@@ -18,9 +18,17 @@ echo "⏳ Waiting for nginx to become reachable..."
 sleep 5
 
 echo "🔍 Testing ACME challenge path..."
+
+# 👇 FIX: Create the directory first!
+docker exec nginx mkdir -p /var/www/certbot/.well-known/acme-challenge
+
+# Now create the test file
 docker exec nginx sh -c "echo test > /var/www/certbot/.well-known/acme-challenge/test"
 
-curl -s http://vumgames.com/.well-known/acme-challenge/test | grep test \
+# Verify permissions (optional but safe)
+docker exec nginx chmod -R 755 /var/www/certbot
+
+curl -s http://$DOMAIN/.well-known/acme-challenge/test | grep test \
   || { echo '❌ ACME challenge NOT reachable'; exit 1; }
 
 echo "✅ ACME challenge reachable"
@@ -46,4 +54,3 @@ cp docker/nginx/app.conf.https docker/nginx/app.conf
 docker compose restart nginx
 
 echo "✅ SSL SETUP COMPLETE"
-
