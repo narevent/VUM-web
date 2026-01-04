@@ -26,6 +26,10 @@ RUN pip install --no-cache-dir gunicorn
 # Copy project
 COPY . .
 
+# Copy entrypoint script and make it executable
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
 # Create necessary directories
 RUN mkdir -p /app/staticfiles /app/media /app/db
 
