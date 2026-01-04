@@ -7,13 +7,6 @@ read -p "Domain name (example.com): " DOMAIN
 git clone $REPO app
 cd app
 
-sed -i "s/example.com/$DOMAIN/g" docker/nginx/app.conf
-
-#!/bin/bash
-set -e
-
-DOMAIN="vumgames.com"
-
 echo "=== FIRST DEPLOY (HTTP ONLY) ==="
 
 # Safety checks
