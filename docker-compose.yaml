@@ -28,12 +28,16 @@ services:
       - ./docker/nginx/app.conf:/etc/nginx/conf.d/default.conf:ro
       - certbot_conf:/etc/letsencrypt
       - certbot_www:/var/www/certbot
-      # Add this line to ensure nginx has static files
+      # Add static files volume
       - static_volume:/app/staticfiles:ro
     depends_on:
       - web
     networks:
       - app-network
+    # Add DNS configuration for better resolution
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
 
   certbot:
     image: certbot/certbot
