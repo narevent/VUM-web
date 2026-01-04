@@ -11,7 +11,9 @@ echo "=== FIRST DEPLOY (HTTP ONLY) ==="
 
 # Safety checks
 if [ ! -f ".env.production" ]; then
-  echo "❌ .env.production not found"
+  echo "⚠️ .env.production not found, creating from example"
+  cp .env.production.example .env.production
+  echo "❗ EDIT .env.production BEFORE CONTINUING"
   exit 1
 fi
 
