@@ -2,6 +2,10 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from parler.models import TranslatableModel, TranslatedFields
+from PIL import Image
+from io import BytesIO
+from django.core.files.uploadedfile import InMemoryUploadedFile
+import sys
 
 class CompanyInfo(TranslatableModel):
     translations = TranslatedFields(
@@ -40,10 +44,38 @@ class Employee(models.Model):
     role = models.CharField(max_length=64)
     description = models.CharField(max_length=64)
     social = models.URLField(blank=True)
+    photo = models.ImageField(upload_to='employees/', blank=True, null=True)
 
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        if self.photo:
+            # Open the image
+            img = Image.open(self.photo)
+            
+            # Convert to grayscale
+            img = img.convert('L')
+            
+            # Scale down to a reasonable size (e.g., 400x400 max)
+            max_size = (400, 400)
+            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+            
+            # Save the processed image
+            output = BytesIO()
+            img.save(output, format='PNG', quality=85)
+            output.seek(0)
+            
+            # Replace the original file with processed one
+            self.photo = InMemoryUploadedFile(
+                output, 'ImageField', 
+                f"{self.photo.name.split('.')[0]}_processed.png",
+                'image/png', 
+                sys.getsizeof(output), 
+                None
+            )
+        
+        super().save(*args, **kwargs)
 
 class FAQ(TranslatableModel):
     translations = TranslatedFields(

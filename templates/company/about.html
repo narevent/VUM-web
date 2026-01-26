@@ -85,11 +85,15 @@
                 <div class="col-lg-4">
                     <div class="card text-center">
                         <div class="card-body" style="padding: 2.5rem;">
-                            <div class="team-avatar mb-3">
-                                <div style="width: 120px; height: 120px; border-radius: 50%; background: rgba(0, 102, 255, 0.1); border: 2px solid rgba(0, 102, 255, 0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto;">
-                                    <i class="fas fa-user fa-3x" style="color: var(--primary-color);"></i>
+                            {% if employee.photo %}
+                                <img src="{{ employee.photo.url }}" alt="{{ employee.name }}">
+                            {% else %}
+                                <div class="team-avatar mb-3">
+                                    <div style="width: 120px; height: 120px; border-radius: 50%; background: rgba(0, 102, 255, 0.1); border: 2px solid rgba(0, 102, 255, 0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                                        <i class="fas fa-user fa-3x" style="color: var(--primary-color);"></i>
+                                    </div>
                                 </div>
-                            </div>
+                            {% endif %}
                             <h5 class="card-title" style="color: var(--text-primary); font-weight: 700; margin-bottom: 0.5rem;">{{ member.name }}</h5>
                             <p style="color: var(--primary-color); font-weight: 600; margin-bottom: 1rem;">{{ member.role }}</p>
                             <p class="card-text" style="color: var(--text-secondary);">{{ member.bio }}</p>
