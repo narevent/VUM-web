@@ -86,7 +86,9 @@
                     <div class="card text-center">
                         <div class="card-body" style="padding: 2.5rem;">
                             {% if employee.photo %}
-                                <img src="{{ employee.photo.url }}" alt="{{ employee.name }}">
+                                <div class="team-avatar mb-3"></div>
+                                    <img src="{{ employee.photo.url }}" alt="{{ employee.name }}">
+                                <div class="team-avatar mb-3"></div>
                             {% else %}
                                 <div class="team-avatar mb-3">
                                     <div style="width: 120px; height: 120px; border-radius: 50%; background: rgba(0, 102, 255, 0.1); border: 2px solid rgba(0, 102, 255, 0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto;">
