@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3-Player MIDI Pong</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+        canvas {
+            border: 2px solid #333;
+            display: block;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #222;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .connected { color: #0f0; }
+        .disconnected { color: #f00; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="900" height="700"></canvas>
+    <div id="status">
+        <div id="midiStatus" class="disconnected">No MIDI Device Connected</div>
+        <div id="deviceInfo" style="margin-top: 5px; font-size: 12px;"></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Constants
+        const WIDTH = 900;
+        const HEIGHT = 700;
+        const FPS = 60;
+        const WHITE = '#ffffff';
+        const BLACK = '#000000';
+        const GREEN = '#00ff00';
+        const RED = '#ff0000';
+        const CYAN = '#00ffff';
+        const GRAY = '#646464';
+
+        // Game settings
+        const PADDLE_LENGTH = 120;
+        const PADDLE_THICKNESS = 15;
+        const BALL_RADIUS = 10;
+        const BALL_SPEED = 7;
+        const LIVES = 5;
+
+        // MIDI settings
+        const MIDI_BASE_NOTE = 48;
+        const OCTAVE_SIZE = 12;
+
+        class Paddle {
+            constructor(side, color, name, octaveOffset) {
+                this.side = side;
+                this.color = color;
+                this.name = name;
+                this.lives = LIVES;
+                this.octaveOffset = octaveOffset;
+                this.targetPos = 0.5;
+
+                if (side === 'left') {
+                    this.x = 20;
+                    this.y = HEIGHT / 2;
+                    this.width = PADDLE_THICKNESS;
+                    this.height = PADDLE_LENGTH;
+                } else if (side === 'right') {
+                    this.x = WIDTH - 20 - PADDLE_THICKNESS;
+                    this.y = HEIGHT / 2;
+                    this.width = PADDLE_THICKNESS;
+                    this.height = PADDLE_LENGTH;
+                } else {
+                    this.x = WIDTH / 2;
+                    this.y = 20;
+                    this.width = PADDLE_LENGTH;
+                    this.height = PADDLE_THICKNESS;
+                }
+            }
+
+            setPositionFromMidi(note) {
+                const octaveNote = note % OCTAVE_SIZE;
+                this.targetPos = octaveNote / (OCTAVE_SIZE - 1);
+            }
+
+            update() {
+                if (this.side === 'left' || this.side === 'right') {
+                    const targetY = this.targetPos * (HEIGHT - this.height);
+                    this.y += (targetY - this.y) * 0.3;
+                } else {
+                    const targetX = this.targetPos * (WIDTH - this.width);
+                    this.x += (targetX - this.x) * 0.3;
+                }
+            }
+
+            getRect() {
+                return {
+                    x: this.x,
+                    y: this.y,
+                    width: this.width,
+                    height: this.height
+                };
+            }
+
+            getCenter() {
+                if (this.side === 'left' || this.side === 'right') {
+                    return this.y + this.height / 2;
+                } else {
+                    return this.x + this.width / 2;
+                }
+            }
+
+            draw() {
+                if (this.lives > 0) {
+                    ctx.fillStyle = this.color;
+                } else {
+                    ctx.fillStyle = '#323232';
+                }
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+        }
+
+        class Ball {
+            constructor(x, y) {
+                this.reset(x, y);
+            }
+
+            reset(x, y) {
+                this.x = x;
+                this.y = y;
+                const angles = [
+                    Math.random() * 90 - 45,
+                    Math.random() * 90 + 45,
+                    Math.random() * 90 + 135,
+                    Math.random() * 90 - 135
+                ];
+                const angle = angles[Math.floor(Math.random() * angles.length)];
+                const angleRad = angle * Math.PI / 180;
+                this.vx = BALL_SPEED * Math.cos(angleRad);
+                this.vy = BALL_SPEED * Math.sin(angleRad);
+                this.lastHit = null;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+            }
+
+            bouncePaddle(paddle) {
+                if (paddle.side === 'left' || paddle.side === 'right') {
+                    const hitPos = (this.y - paddle.getCenter()) / (paddle.height / 2);
+                    this.vx = -this.vx * 1.05;
+                    this.vy += hitPos * 3;
+                } else {
+                    const hitPos = (this.x - paddle.getCenter()) / (paddle.width / 2);
+                    this.vy = -this.vy * 1.05;
+                    this.vx += hitPos * 3;
+                }
+
+                const speed = Math.sqrt(this.vx ** 2 + this.vy ** 2);
+                if (speed > BALL_SPEED * 1.8) {
+                    this.vx = this.vx / speed * BALL_SPEED * 1.8;
+                    this.vy = this.vy / speed * BALL_SPEED * 1.8;
+                }
+
+                this.lastHit = paddle.name;
+            }
+
+            bounceWall() {
+                if (this.y + BALL_RADIUS > HEIGHT) {
+                    this.vy = -Math.abs(this.vy);
+                    this.y = HEIGHT - BALL_RADIUS;
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = WHITE;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, BALL_RADIUS, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function rectsCollide(r1, r2) {
+            return r1.x < r2.x + r2.width &&
+                   r1.x + r1.width > r2.x &&
+                   r1.y < r2.y + r2.height &&
+                   r1.y + r1.height > r2.y;
+        }
+
+        // Game state
+        const paddles = {
+            'P1': new Paddle('left', GREEN, 'P1', 0),
+            'P2': new Paddle('right', RED, 'P2', 2),
+            'P3': new Paddle('top', CYAN, 'P3', 1)
+        };
+
+        const ball = new Ball(WIDTH / 2, HEIGHT / 2);
+        let gameOver = false;
+        let winner = null;
+        const activeNotes = { 'P1': null, 'P2': null, 'P3': null };
+
+        let midiAccess = null;
+
+        // MIDI Setup
+        async function setupMIDI() {
+            try {
+                midiAccess = await navigator.requestMIDIAccess();
+                console.log('MIDI Access granted');
+                
+                const inputs = Array.from(midiAccess.inputs.values());
+                console.log(`Found ${inputs.length} MIDI input(s)`);
+                
+                if (inputs.length === 0) {
+                    document.getElementById('midiStatus').textContent = 'No MIDI Device Connected';
+                    document.getElementById('midiStatus').className = 'disconnected';
+                    return;
+                }
+
+                inputs.forEach((input, index) => {
+                    console.log(`MIDI Input ${index}: ${input.name}`);
+                    input.onmidimessage = handleMIDIMessage;
+                });
+
+                document.getElementById('midiStatus').textContent = `MIDI Connected: ${inputs[0].name}`;
+                document.getElementById('midiStatus').className = 'connected';
+                document.getElementById('deviceInfo').textContent = `Using ${inputs.length} MIDI input device(s)`;
+            } catch (err) {
+                console.error('MIDI Access failed:', err);
+                document.getElementById('midiStatus').textContent = 'MIDI Access Denied or Not Supported';
+                document.getElementById('midiStatus').className = 'disconnected';
+            }
+        }
+
+        function handleMIDIMessage(event) {
+            const [status, note, velocity] = event.data;
+
+            // Note on (status 144 with velocity > 0)
+            if (status === 144 && velocity > 0) {
+                if (note >= MIDI_BASE_NOTE && note < MIDI_BASE_NOTE + (OCTAVE_SIZE * 3)) {
+                    const relativeNote = note - MIDI_BASE_NOTE;
+                    const octave = Math.floor(relativeNote / OCTAVE_SIZE);
+
+                    if (octave === 0) {
+                        paddles['P1'].setPositionFromMidi(relativeNote);
+                        activeNotes['P1'] = note;
+                    } else if (octave === 1) {
+                        paddles['P3'].setPositionFromMidi(relativeNote);
+                        activeNotes['P3'] = note;
+                    } else if (octave === 2) {
+                        paddles['P2'].setPositionFromMidi(relativeNote);
+                        activeNotes['P2'] = note;
+                    }
+                }
+            }
+            // Note off (status 128 or status 144 with velocity 0)
+            else if (status === 128 || (status === 144 && velocity === 0)) {
+                for (const player in activeNotes) {
+                    if (activeNotes[player] === note) {
+                        activeNotes[player] = null;
+                    }
+                }
+            }
+        }
+
+        // Keyboard controls for restart
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'r' && gameOver) {
+                for (const p in paddles) {
+                    paddles[p].lives = LIVES;
+                }
+                ball.reset(WIDTH / 2, HEIGHT / 2);
+                gameOver = false;
+                winner = null;
+            }
+        });
+
+        function update() {
+            if (!gameOver) {
+                // Update paddles
+                for (const p in paddles) {
+                    paddles[p].update();
+                }
+
+                // Update ball
+                ball.update();
+
+                // Check paddle collisions
+                for (const p in paddles) {
+                    const paddle = paddles[p];
+                    if (paddle.lives > 0) {
+                        const paddleRect = paddle.getRect();
+                        const ballRect = {
+                            x: ball.x - BALL_RADIUS,
+                            y: ball.y - BALL_RADIUS,
+                            width: BALL_RADIUS * 2,
+                            height: BALL_RADIUS * 2
+                        };
+                        if (rectsCollide(paddleRect, ballRect)) {
+                            ball.bouncePaddle(paddle);
+                        }
+                    }
+                }
+
+                // Check bottom wall bounce
+                ball.bounceWall();
+
+                // Check if ball goes out of bounds
+                let lostPlayer = null;
+                if (ball.x - BALL_RADIUS < 0) {
+                    lostPlayer = 'P1';
+                    ball.reset(WIDTH / 2, HEIGHT / 2);
+                } else if (ball.x + BALL_RADIUS > WIDTH) {
+                    lostPlayer = 'P2';
+                    ball.reset(WIDTH / 2, HEIGHT / 2);
+                } else if (ball.y - BALL_RADIUS < 0) {
+                    lostPlayer = 'P3';
+                    ball.reset(WIDTH / 2, HEIGHT / 2);
+                }
+
+                if (lostPlayer) {
+                    paddles[lostPlayer].lives -= 1;
+                    if (paddles[lostPlayer].lives <= 0) {
+                        const alive = Object.values(paddles).filter(p => p.lives > 0);
+                        if (alive.length === 1) {
+                            winner = alive[0].name;
+                            gameOver = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        function draw() {
+            // Clear screen
+            ctx.fillStyle = BLACK;
+            ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+            // Draw center line
+            ctx.fillStyle = GRAY;
+            for (let i = 0; i < HEIGHT; i += 30) {
+                ctx.fillRect(WIDTH / 2 - 2, i, 4, 20);
+            }
+
+            // Draw paddles
+            for (const p in paddles) {
+                paddles[p].draw();
+            }
+
+            // Draw ball
+            ball.draw();
+
+            // Draw lives
+            ctx.font = '48px Arial';
+            ctx.fillStyle = GREEN;
+            ctx.fillText(`P1: ${'♥'.repeat(paddles['P1'].lives)}`, 60, HEIGHT / 2 - 100);
+            ctx.fillStyle = RED;
+            ctx.fillText(`P2: ${'♥'.repeat(paddles['P2'].lives)}`, WIDTH - 200, HEIGHT / 2 - 100);
+            ctx.fillStyle = CYAN;
+            ctx.fillText(`P3: ${'♥'.repeat(paddles['P3'].lives)}`, WIDTH / 2 - 80, 60);
+
+            // Draw MIDI controls info
+            ctx.font = '24px Arial';
+            ctx.fillStyle = GREEN;
+            ctx.fillText('Octave 1', 60, HEIGHT / 2 - 50);
+            ctx.fillStyle = RED;
+            ctx.fillText('Octave 3', WIDTH - 200, HEIGHT / 2 - 50);
+            ctx.fillStyle = CYAN;
+            ctx.fillText('Octave 2', WIDTH / 2 - 40, 100);
+
+            // Show active notes indicator
+            if (activeNotes['P1'] !== null) {
+                ctx.fillStyle = GREEN;
+                ctx.fillText('●', 40, HEIGHT / 2 - 50);
+            }
+            if (activeNotes['P2'] !== null) {
+                ctx.fillStyle = RED;
+                ctx.fillText('●', WIDTH - 220, HEIGHT / 2 - 50);
+            }
+            if (activeNotes['P3'] !== null) {
+                ctx.fillStyle = CYAN;
+                ctx.fillText('●', WIDTH / 2 - 60, 100);
+            }
+
+            // Game over screen
+            if (gameOver) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.78)';
+                ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+                ctx.font = '48px Arial';
+                ctx.fillStyle = paddles[winner].color;
+                ctx.fillText(`${winner} WINS!`, WIDTH / 2 - 100, HEIGHT / 2 - 50);
+
+                ctx.font = '32px Arial';
+                ctx.fillStyle = WHITE;
+                ctx.fillText('Press R to Restart', WIDTH / 2 - 150, HEIGHT / 2 + 20);
+            }
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Initialize
+        setupMIDI();
+        gameLoop();
+    </script>
+</body>
+</html>

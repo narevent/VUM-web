@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIDI Pac-Man Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+        canvas {
+            border: 2px solid #333;
+            display: block;
+            image-rendering: pixelated;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #222;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .connected { color: #0f0; }
+        .disconnected { color: #f00; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="448" height="576"></canvas>
+    <div id="status">
+        <div id="midiStatus" class="disconnected">No MIDI Device Connected</div>
+        <div id="deviceInfo" style="margin-top: 5px; font-size: 12px;">
+            White→White: Horizontal | White→Black: Up | Black→White: Down | Black→Black: Vertical
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Constants
+        const WIDTH = 448;
+        const HEIGHT = 576;
+        const TILE_SIZE = 16;
+        const FPS = 60;
+
+        // Colors
+        const BLACK = '#000000';
+        const YELLOW = '#ffff00';
+        const WHITE = '#ffffff';
+        const BLUE = '#0000ff';
+        const RED = '#ff0000';
+        const PINK = '#ffb8ff';
+        const CYAN = '#00ffff';
+        const ORANGE = '#ffb852';
+
+        // Directions
+        const Direction = {
+            UP: { x: 0, y: -1 },
+            DOWN: { x: 0, y: 1 },
+            LEFT: { x: -1, y: 0 },
+            RIGHT: { x: 1, y: 0 },
+            NONE: { x: 0, y: 0 }
+        };
+
+        // Classic Pac-Man maze layout
+        const MAZE_TEMPLATE = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
+            [1,3,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,3,1],
+            [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,2,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,2,1],
+            [1,2,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,2,1],
+            [1,2,2,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,2,2,1],
+            [1,1,1,1,1,1,2,1,1,1,1,1,0,1,1,0,1,1,1,1,1,2,1,1,1,1,1,1],
+            [1,1,1,1,1,1,2,1,1,1,1,1,0,1,1,0,1,1,1,1,1,2,1,1,1,1,1,1],
+            [1,1,1,1,1,1,2,1,1,0,0,0,0,0,0,0,0,0,0,1,1,2,1,1,1,1,1,1],
+            [1,1,1,1,1,1,2,1,1,0,1,1,1,0,0,1,1,1,0,1,1,2,1,1,1,1,1,1],
+            [1,1,1,1,1,1,2,1,1,0,1,0,0,0,0,0,0,1,0,1,1,2,1,1,1,1,1,1],
+            [0,0,0,0,0,0,2,0,0,0,1,0,0,0,0,0,0,1,0,0,0,2,0,0,0,0,0,0],
+            [1,1,1,1,1,1,2,1,1,0,1,0,0,0,0,0,0,1,0,1,1,2,1,1,1,1,1,1],
+            [1,1,1,1,1,1,2,1,1,0,1,1,1,1,1,1,1,1,0,1,1,2,1,1,1,1,1,1],
+            [1,1,1,1,1,1,2,1,1,0,0,0,0,0,0,0,0,0,0,1,1,2,1,1,1,1,1,1],
+            [1,1,1,1,1,1,2,1,1,0,1,1,1,1,1,1,1,1,0,1,1,2,1,1,1,1,1,1],
+            [1,1,1,1,1,1,2,1,1,0,1,1,1,1,1,1,1,1,0,1,1,2,1,1,1,1,1,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
+            [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
+            [1,3,2,2,1,1,2,2,2,2,2,2,2,0,0,2,2,2,2,2,2,2,1,1,2,2,3,1],
+            [1,1,1,2,1,1,2,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,1,2,1,1,1],
+            [1,1,1,2,1,1,2,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,1,2,1,1,1],
+            [1,2,2,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,2,2,1],
+            [1,2,1,1,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,1,1,2,1],
+            [1,2,1,1,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,1,1,2,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        ];
+
+        class PacMan {
+            constructor() {
+                this.gridX = 14;
+                this.gridY = 23;
+                this.x = this.gridX * TILE_SIZE + TILE_SIZE / 2;
+                this.y = this.gridY * TILE_SIZE + TILE_SIZE / 2;
+                this.direction = Direction.NONE;
+                this.nextDirection = Direction.NONE;
+                this.speed = 2;
+                this.radius = 6;
+                this.mouthOpen = 0;
+                this.mouthSpeed = 0.2;
+            }
+
+            update(maze) {
+                // Try to turn if next direction is set
+                if (this.nextDirection !== Direction.NONE) {
+                    const newX = this.x + this.nextDirection.x * this.speed;
+                    const newY = this.y + this.nextDirection.y * this.speed;
+                    if (!this.checkWallCollision(newX, newY, maze)) {
+                        this.direction = this.nextDirection;
+                        this.nextDirection = Direction.NONE;
+                    }
+                }
+
+                // Move in current direction
+                if (this.direction !== Direction.NONE) {
+                    let newX = this.x + this.direction.x * this.speed;
+                    let newY = this.y + this.direction.y * this.speed;
+
+                    // Auto-align to corridor center
+                    const gridX = Math.round((this.x - TILE_SIZE / 2) / TILE_SIZE);
+                    const gridY = Math.round((this.y - TILE_SIZE / 2) / TILE_SIZE);
+                    const centerX = gridX * TILE_SIZE + TILE_SIZE / 2;
+                    const centerY = gridY * TILE_SIZE + TILE_SIZE / 2;
+
+                    if (this.direction === Direction.LEFT || this.direction === Direction.RIGHT) {
+                        newY = centerY;
+                    } else if (this.direction === Direction.UP || this.direction === Direction.DOWN) {
+                        newX = centerX;
+                    }
+
+                    if (!this.checkWallCollision(newX, newY, maze)) {
+                        this.x = newX;
+                        this.y = newY;
+                    }
+
+                    // Tunnel wrapping
+                    if (this.x < -TILE_SIZE) {
+                        this.x = WIDTH + TILE_SIZE;
+                    } else if (this.x > WIDTH + TILE_SIZE) {
+                        this.x = -TILE_SIZE;
+                    }
+                }
+
+                // Animate mouth
+                this.mouthOpen += this.mouthSpeed;
+                if (this.mouthOpen > 0.8 || this.mouthOpen < 0) {
+                    this.mouthSpeed *= -1;
+                }
+            }
+
+            checkWallCollision(x, y, maze) {
+                const checkPoints = [
+                    [x - this.radius, y],
+                    [x + this.radius, y],
+                    [x, y - this.radius],
+                    [x, y + this.radius],
+                    [x - this.radius * 0.7, y - this.radius * 0.7],
+                    [x + this.radius * 0.7, y - this.radius * 0.7],
+                    [x - this.radius * 0.7, y + this.radius * 0.7],
+                    [x + this.radius * 0.7, y + this.radius * 0.7],
+                ];
+
+                for (const [px, py] of checkPoints) {
+                    const gx = Math.floor(px / TILE_SIZE);
+                    const gy = Math.floor(py / TILE_SIZE);
+                    if (gy >= 0 && gy < maze.length && gx >= 0 && gx < maze[0].length) {
+                        if (maze[gy][gx] === 1) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+
+            draw(ctx) {
+                const angleOffset = {
+                    [Direction.RIGHT]: 0,
+                    [Direction.LEFT]: 180,
+                    [Direction.UP]: 90,
+                    [Direction.DOWN]: 270,
+                    [Direction.NONE]: 0
+                };
+
+                const offset = angleOffset[this.direction] || 0;
+
+                ctx.fillStyle = YELLOW;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw mouth
+                if (this.direction !== Direction.NONE) {
+                    const mouthAngle = 45 * this.mouthOpen * Math.PI / 180;
+                    const startAngle = offset * Math.PI / 180 + mouthAngle;
+                    const endAngle = offset * Math.PI / 180 - mouthAngle + Math.PI * 2;
+
+                    ctx.fillStyle = BLACK;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y);
+                    ctx.arc(this.x, this.y, this.radius, startAngle, endAngle);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+        }
+
+        class Ghost {
+            constructor(gridX, gridY, color, name) {
+                this.startGridX = gridX;
+                this.startGridY = gridY;
+                this.startX = gridX * TILE_SIZE + TILE_SIZE / 2;
+                this.startY = gridY * TILE_SIZE + TILE_SIZE / 2;
+                this.x = this.startX;
+                this.y = this.startY;
+                this.color = color;
+                this.name = name;
+                this.direction = Direction.UP;
+                this.speed = 1.8;
+                this.frightened = false;
+                this.frightenedTimer = 0;
+                this.radius = 7;
+                this.releaseTimer = 0;
+            }
+
+            reset() {
+                this.x = this.startX;
+                this.y = this.startY;
+                this.direction = Direction.UP;
+                this.frightened = false;
+                this.frightenedTimer = 0;
+                this.releaseTimer = 0;
+            }
+
+            update(pacman, maze) {
+                // Release timer for ghosts to leave house
+                if (this.releaseTimer > 0) {
+                    this.releaseTimer--;
+                    if (this.y > 11 * TILE_SIZE + TILE_SIZE / 2) {
+                        this.y -= 1;
+                        return;
+                    }
+                }
+
+                if (this.frightened) {
+                    this.frightenedTimer--;
+                    if (this.frightenedTimer <= 0) {
+                        this.frightened = false;
+                    }
+                }
+
+                const gridX = Math.round((this.x - TILE_SIZE / 2) / TILE_SIZE);
+                const gridY = Math.round((this.y - TILE_SIZE / 2) / TILE_SIZE);
+
+                const centerX = gridX * TILE_SIZE + TILE_SIZE / 2;
+                const centerY = gridY * TILE_SIZE + TILE_SIZE / 2;
+                const distToCenter = Math.abs(this.x - centerX) + Math.abs(this.y - centerY);
+
+                if (distToCenter < 3) {
+                    this.chooseDirection(pacman, maze, gridX, gridY);
+                }
+
+                let newX = this.x + this.direction.x * this.speed;
+                let newY = this.y + this.direction.y * this.speed;
+
+                if (this.direction === Direction.LEFT || this.direction === Direction.RIGHT) {
+                    newY = centerY;
+                } else if (this.direction === Direction.UP || this.direction === Direction.DOWN) {
+                    newX = centerX;
+                }
+
+                if (!this.checkWallCollision(newX, newY, maze)) {
+                    this.x = newX;
+                    this.y = newY;
+                }
+
+                // Tunnel wrapping
+                if (this.x < -TILE_SIZE) {
+                    this.x = WIDTH + TILE_SIZE;
+                } else if (this.x > WIDTH + TILE_SIZE) {
+                    this.x = -TILE_SIZE;
+                }
+            }
+
+            chooseDirection(pacman, maze, gridX, gridY) {
+                const possibleDirs = [];
+                const opposite = {
+                    [Direction.UP]: Direction.DOWN,
+                    [Direction.DOWN]: Direction.UP,
+                    [Direction.LEFT]: Direction.RIGHT,
+                    [Direction.RIGHT]: Direction.LEFT,
+                    [Direction.NONE]: Direction.NONE
+                };
+
+                for (const d of [Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT]) {
+                    if (d === opposite[this.direction]) {
+                        continue;
+                    }
+
+                    const testX = gridX + d.x;
+                    const testY = gridY + d.y;
+
+                    if (testY >= 0 && testY < maze.length && testX >= 0 && testX < maze[0].length) {
+                        if (maze[testY][testX] !== 1) {
+                            possibleDirs.push(d);
+                        }
+                    }
+                }
+
+                if (possibleDirs.length === 0) {
+                    possibleDirs.push(opposite[this.direction]);
+                }
+
+                if (this.frightened) {
+                    this.direction = possibleDirs[Math.floor(Math.random() * possibleDirs.length)];
+                } else {
+                    const targetX = Math.round((pacman.x - TILE_SIZE / 2) / TILE_SIZE);
+                    const targetY = Math.round((pacman.y - TILE_SIZE / 2) / TILE_SIZE);
+
+                    let minDist = Infinity;
+                    let bestDir = this.direction;
+
+                    for (const d of possibleDirs) {
+                        const testX = gridX + d.x;
+                        const testY = gridY + d.y;
+                        const dist = (testX - targetX) ** 2 + (testY - targetY) ** 2;
+                        if (dist < minDist) {
+                            minDist = dist;
+                            bestDir = d;
+                        }
+                    }
+
+                    this.direction = bestDir;
+                }
+            }
+
+            checkWallCollision(x, y, maze) {
+                const checkPoints = [
+                    [x - this.radius, y],
+                    [x + this.radius, y],
+                    [x, y - this.radius],
+                    [x, y + this.radius],
+                ];
+
+                for (const [px, py] of checkPoints) {
+                    const gx = Math.floor(px / TILE_SIZE);
+                    const gy = Math.floor(py / TILE_SIZE);
+                    if (gy >= 0 && gy < maze.length && gx >= 0 && gx < maze[0].length) {
+                        if (maze[gy][gx] === 1) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+
+            draw(ctx) {
+                const color = this.frightened ? BLUE : this.color;
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw eyes
+                if (!this.frightened) {
+                    const eyeOffset = 3;
+                    ctx.fillStyle = WHITE;
+                    ctx.beginPath();
+                    ctx.arc(this.x - eyeOffset, this.y - 2, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(this.x + eyeOffset, this.y - 2, 3, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = BLACK;
+                    ctx.beginPath();
+                    ctx.arc(this.x - eyeOffset, this.y - 2, 1, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(this.x + eyeOffset, this.y - 2, 1, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        class PacManGame {
+            constructor() {
+                this.lastNote = null;
+                this.midiEnabled = true;
+                this.keysPressed = {};
+                this.resetGame();
+            }
+
+            resetGame() {
+                this.pacman = new PacMan();
+
+                this.ghosts = [
+                    new Ghost(13, 14, RED, "Blinky"),
+                    new Ghost(14, 14, PINK, "Pinky"),
+                    new Ghost(15, 14, CYAN, "Inky"),
+                    new Ghost(16, 14, ORANGE, "Clyde")
+                ];
+
+                this.ghosts[0].releaseTimer = 0;
+                this.ghosts[1].releaseTimer = 60;
+                this.ghosts[2].releaseTimer = 120;
+                this.ghosts[3].releaseTimer = 180;
+
+                this.maze = MAZE_TEMPLATE.map(row => [...row]);
+                this.score = 0;
+                this.lives = 3;
+                this.pelletsRemaining = 0;
+                for (const row of this.maze) {
+                    for (const tile of row) {
+                        if (tile === 2 || tile === 3) {
+                            this.pelletsRemaining++;
+                        }
+                    }
+                }
+                this.gameOver = false;
+                this.won = false;
+                this.respawnTimer = 0;
+            }
+
+            isBlackKey(note) {
+                const noteInOctave = note % 12;
+                return [1, 3, 6, 8, 10].includes(noteInOctave);
+            }
+
+            isWhiteKey(note) {
+                return !this.isBlackKey(note);
+            }
+
+            determineDirection(prevNote, currNote) {
+                const prevIsWhite = this.isWhiteKey(prevNote);
+                const prevIsBlack = this.isBlackKey(prevNote);
+                const currIsWhite = this.isWhiteKey(currNote);
+                const currIsBlack = this.isBlackKey(currNote);
+
+                // White to White: horizontal
+                if (prevIsWhite && currIsWhite) {
+                    return currNote > prevNote ? Direction.RIGHT : Direction.LEFT;
+                }
+                // White to Black: up
+                else if (prevIsWhite && currIsBlack) {
+                    return Direction.UP;
+                }
+                // Black to White: down
+                else if (prevIsBlack && currIsWhite) {
+                    return Direction.DOWN;
+                }
+                // Black to Black: vertical by pitch
+                else if (prevIsBlack && currIsBlack) {
+                    return currNote > prevNote ? Direction.UP : Direction.DOWN;
+                }
+
+                return null;
+            }
+
+            handleKeyDown(key) {
+                this.keysPressed[key] = true;
+                if (!this.midiEnabled) {
+                    if (key === 'ArrowUp') {
+                        this.pacman.nextDirection = Direction.UP;
+                    } else if (key === 'ArrowDown') {
+                        this.pacman.nextDirection = Direction.DOWN;
+                    } else if (key === 'ArrowLeft') {
+                        this.pacman.nextDirection = Direction.LEFT;
+                    } else if (key === 'ArrowRight') {
+                        this.pacman.nextDirection = Direction.RIGHT;
+                    }
+                }
+                if (key === 'r' && (this.gameOver || this.won)) {
+                    this.resetGame();
+                }
+            }
+
+            handleKeyUp(key) {
+                this.keysPressed[key] = false;
+            }
+
+            handleMIDIMessage(note, velocity) {
+                if (velocity > 0) {
+                    const noteInOctave = note % 12;
+                    if (this.lastNote !== null) {
+                        const direction = this.determineDirection(this.lastNote, noteInOctave);
+                        if (direction) {
+                            this.pacman.nextDirection = direction;
+                        }
+                    }
+                    this.lastNote = noteInOctave;
+                }
+            }
+
+            update() {
+                if (this.gameOver || this.won) return;
+
+                if (this.respawnTimer > 0) {
+                    this.respawnTimer--;
+                    return;
+                }
+
+                this.pacman.update(this.maze);
+
+                // Check pellet collection
+                const gridX = Math.round((this.pacman.x - TILE_SIZE / 2) / TILE_SIZE);
+                const gridY = Math.round((this.pacman.y - TILE_SIZE / 2) / TILE_SIZE);
+
+                if (gridY >= 0 && gridY < this.maze.length && gridX >= 0 && gridX < this.maze[0].length) {
+                    if (this.maze[gridY][gridX] === 2) {
+                        this.maze[gridY][gridX] = 0;
+                        this.score += 10;
+                        this.pelletsRemaining--;
+                    } else if (this.maze[gridY][gridX] === 3) {
+                        this.maze[gridY][gridX] = 0;
+                        this.score += 50;
+                        this.pelletsRemaining--;
+                        for (const ghost of this.ghosts) {
+                            ghost.frightened = true;
+                            ghost.frightenedTimer = 300;
+                        }
+                    }
+                }
+
+                // Update ghosts
+                for (const ghost of this.ghosts) {
+                    ghost.update(this.pacman, this.maze);
+                }
+
+                // Check collisions
+                for (const ghost of this.ghosts) {
+                    const dist = Math.sqrt((this.pacman.x - ghost.x) ** 2 + (this.pacman.y - ghost.y) ** 2);
+                    if (dist < 13) {
+                        if (ghost.frightened) {
+                            this.score += 200;
+                            ghost.reset();
+                            ghost.releaseTimer = 120;
+                        } else {
+                            this.lives--;
+                            if (this.lives <= 0) {
+                                this.gameOver = true;
+                            } else {
+                                this.pacman = new PacMan();
+                                for (const g of this.ghosts) {
+                                    g.reset();
+                                    if (g.name === "Blinky") g.releaseTimer = 0;
+                                    else if (g.name === "Pinky") g.releaseTimer = 60;
+                                    else if (g.name === "Inky") g.releaseTimer = 120;
+                                    else g.releaseTimer = 180;
+                                }
+                                this.respawnTimer = 60;
+                            }
+                            return;
+                        }
+                    }
+                }
+
+                // Check win
+                if (this.pelletsRemaining === 0) {
+                    this.won = true;
+                }
+            }
+
+            draw(ctx) {
+                ctx.fillStyle = BLACK;
+                ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+                // Draw maze
+                for (let y = 0; y < this.maze.length; y++) {
+                    for (let x = 0; x < this.maze[0].length; x++) {
+                        const tile = this.maze[y][x];
+                        const px = x * TILE_SIZE;
+                        const py = y * TILE_SIZE;
+
+                        if (tile === 1) {
+                            ctx.fillStyle = BLUE;
+                            ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                        } else if (tile === 2) {
+                            ctx.fillStyle = WHITE;
+                            ctx.beginPath();
+                            ctx.arc(px + TILE_SIZE / 2, py + TILE_SIZE / 2, 2, 0, Math.PI * 2);
+                            ctx.fill();
+                        } else if (tile === 3) {
+                            ctx.fillStyle = WHITE;
+                            ctx.beginPath();
+                            ctx.arc(px + TILE_SIZE / 2, py + TILE_SIZE / 2, 4, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                }
+
+                // Draw game objects
+                if (this.respawnTimer === 0) {
+                    this.pacman.draw(ctx);
+                }
+                for (const ghost of this.ghosts) {
+                    ghost.draw(ctx);
+                }
+
+                // Draw HUD
+                ctx.font = '36px Arial';
+                ctx.fillStyle = WHITE;
+                ctx.fillText(`SCORE: ${this.score}`, 10, 40);
+
+                ctx.fillText('LIVES:', 10, 75);
+                for (let i = 0; i < this.lives; i++) {
+                    ctx.fillStyle = YELLOW;
+                    ctx.beginPath();
+                    ctx.arc(100 + i * 25, 67, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Draw MIDI status
+                ctx.font = '20px Arial';
+                ctx.fillStyle = CYAN;
+                const midiText = this.midiEnabled ? 'MIDI: Connected' : 'MIDI: Not found (using arrows)';
+                ctx.fillText(midiText, 10, HEIGHT - 15);
+
+                if (this.gameOver) {
+                    ctx.font = '36px Arial';
+                    ctx.fillStyle = RED;
+                    const text = 'GAME OVER';
+                    const textWidth = ctx.measureText(text).width;
+                    ctx.fillText(text, WIDTH / 2 - textWidth / 2, HEIGHT / 2 - 20);
+
+                    ctx.font = '20px Arial';
+                    ctx.fillStyle = WHITE;
+                    const restartText = 'Press R to Restart';
+                    const restartWidth = ctx.measureText(restartText).width;
+                    ctx.fillText(restartText, WIDTH / 2 - restartWidth / 2, HEIGHT / 2 + 20);
+                }
+
+                if (this.won) {
+                    ctx.font = '36px Arial';
+                    ctx.fillStyle = YELLOW;
+                    const text = 'YOU WIN!';
+                    const textWidth = ctx.measureText(text).width;
+                    ctx.fillText(text, WIDTH / 2 - textWidth / 2, HEIGHT / 2 - 20);
+
+                    ctx.font = '20px Arial';
+                    ctx.fillStyle = WHITE;
+                    const restartText = 'Press R to Restart';
+                    const restartWidth = ctx.measureText(restartText).width;
+                    ctx.fillText(restartText, WIDTH / 2 - restartWidth / 2, HEIGHT / 2 + 20);
+                }
+            }
+        }
+
+        // Initialize game
+        const game = new PacManGame();
+        let midiAccess = null;
+
+        // MIDI Setup
+        async function setupMIDI() {
+            try {
+                midiAccess = await navigator.requestMIDIAccess();
+                console.log('MIDI Access granted');
+                
+                const inputs = Array.from(midiAccess.inputs.values());
+                console.log(`Found ${inputs.length} MIDI input(s)`);
+                
+                if (inputs.length === 0) {
+                    document.getElementById('midiStatus').textContent = 'No MIDI Device Connected';
+                    document.getElementById('midiStatus').className = 'disconnected';
+                    document.getElementById('deviceInfo').textContent = 'Arrow keys also work!';
+                    game.midiEnabled = false;
+                    return;
+                }
+
+                inputs.forEach((input, index) => {
+                    console.log(`MIDI Input ${index}: ${input.name}`);
+                    input.onmidimessage = handleMIDIMessage;
+                });
+
+                document.getElementById('midiStatus').textContent = `MIDI Connected: ${inputs[0].name}`;
+                document.getElementById('midiStatus').className = 'connected';
+                document.getElementById('deviceInfo').textContent = 'White→White: Horizontal | White→Black: Up | Black→White: Down | Black→Black: Vertical';
+            } catch (err) {
+                console.error('MIDI Access failed:', err);
+                document.getElementById('midiStatus').textContent = 'MIDI Access Denied or Not Supported';
+                document.getElementById('midiStatus').className = 'disconnected';
+                document.getElementById('deviceInfo').textContent = 'Arrow keys also work!';
+                game.midiEnabled = false;
+            }
+        }
+
+        function handleMIDIMessage(event) {
+            const [status, note, velocity] = event.data;
+
+            // Note on (status 144 with velocity > 0)
+            if (status === 144 && velocity > 0) {
+                game.handleMIDIMessage(note, velocity);
+            }
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            game.handleKeyDown(e.key);
+        });
+
+        document.addEventListener('keyup', (e) => {
+            game.handleKeyUp(e.key);
+        });
+
+        // Game loop
+        function gameLoop() {
+            game.update();
+            game.draw(ctx);
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Initialize
+        setupMIDI();
+        gameLoop();
+    </script>
+</body>
+</html>

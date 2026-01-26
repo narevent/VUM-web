@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIDI Breakout Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+        canvas {
+            border: 2px solid #333;
+            display: block;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #222;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .connected { color: #0f0; }
+        .disconnected { color: #f00; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="status">
+        <div id="midiStatus" class="disconnected">No MIDI Device Connected</div>
+        <div id="deviceInfo" style="margin-top: 5px; font-size: 12px;">Arrow keys also work!</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Constants
+        const WIDTH = 800;
+        const HEIGHT = 600;
+        const FPS = 60;
+        const PADDLE_WIDTH = 100;
+        const PADDLE_HEIGHT = 20;
+        const BALL_SIZE = 10;
+        const BRICK_WIDTH = 80;
+        const BRICK_HEIGHT = 30;
+        const BRICK_ROWS = 5;
+        const BRICK_COLS = 10;
+        const BRICK_PADDING = 2;
+        const BALL_SPEED = 0.5;
+        const NUM_NOTES = 36;
+
+        // Colors
+        const WHITE = '#ffffff';
+        const BLACK = '#000000';
+        const RED = '#ff0000';
+        const ORANGE = '#ffa500';
+        const YELLOW = '#ffff00';
+        const GREEN = '#00ff00';
+        const BLUE = '#0000ff';
+
+        class LevelDesign {
+            static getLevelLayout(level) {
+                const layouts = {
+                    1: [
+                        "RRRRRRRRRR",
+                        "OOOOOOOOOO",
+                        "YYYYYYYYYY",
+                        "GGGGGGGGGG",
+                        "BBBBBBBBBB"
+                    ],
+                    2: [
+                        "R O R O R O",
+                        " O R O R O ",
+                        "R O R O R O",
+                        " O R O R O ",
+                        "R O R O R O"
+                    ],
+                    3: [
+                        "RRROOOBBB",
+                        "RRROOOBBB",
+                        "   RRR   ",
+                        "BBBOOORR",
+                        "BBBOOORR"
+                    ]
+                };
+                return layouts[level] || layouts[1];
+            }
+
+            static getLevelSpeed(level) {
+                return 5 + (level - 1) * 0.5;
+            }
+
+            static getPowerupChance(level) {
+                return Math.min(0.1 + (level - 1) * 0.02, 0.25);
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color, velocity = null) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.life = 1.0;
+                this.decayRate = Math.random() * 0.03 + 0.02;
+
+                if (velocity) {
+                    this.dx = velocity[0];
+                    this.dy = velocity[1];
+                } else {
+                    const angle = Math.random() * 2 * Math.PI;
+                    const speed = Math.random() * 3 + 2;
+                    this.dx = Math.cos(angle) * speed;
+                    this.dy = Math.sin(angle) * speed;
+                }
+            }
+
+            update() {
+                this.x += this.dx;
+                this.y += this.dy;
+                this.life -= this.decayRate;
+                this.dy += 0.1;
+                return this.life > 0;
+            }
+
+            draw(ctx) {
+                const alpha = this.life;
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, 4, 4);
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        class ParticleSystem {
+            constructor() {
+                this.particles = [];
+            }
+
+            addParticles(x, y, color, count = 10, velocity = null) {
+                for (let i = 0; i < count; i++) {
+                    this.particles.push(new Particle(x, y, color, velocity));
+                }
+            }
+
+            update() {
+                this.particles = this.particles.filter(p => p.update());
+            }
+
+            draw(ctx) {
+                for (const particle of this.particles) {
+                    particle.draw(ctx);
+                }
+            }
+        }
+
+        class PowerUp {
+            static TYPES = {
+                'EXPAND': { color: GREEN, duration: 10 },
+                'SHRINK': { color: RED, duration: 10 },
+                'SLOW': { color: BLUE, duration: 10 },
+                'MULTI_BALL': { color: YELLOW, duration: null }
+            };
+
+            constructor(x, y, powerType) {
+                this.x = x;
+                this.y = y;
+                this.width = 20;
+                this.height = 20;
+                this.type = powerType;
+                this.color = PowerUp.TYPES[powerType].color;
+                this.duration = PowerUp.TYPES[powerType].duration;
+                this.speed = 3;
+                this.active = true;
+            }
+
+            update() {
+                this.y += this.speed;
+            }
+
+            draw(ctx) {
+                if (this.active) {
+                    ctx.fillStyle = this.color;
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                }
+            }
+
+            collidesWith(paddle) {
+                return this.x < paddle.x + paddle.width &&
+                       this.x + this.width > paddle.x &&
+                       this.y < paddle.y + paddle.height &&
+                       this.y + this.height > paddle.y;
+            }
+        }
+
+        class Brick {
+            constructor(x, y, width, height) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.visible = true;
+                this.color = [RED, ORANGE, YELLOW][Math.floor(Math.random() * 3)];
+            }
+
+            get centerX() {
+                return this.x + this.width / 2;
+            }
+
+            get centerY() {
+                return this.y + this.height / 2;
+            }
+
+            collidesWith(ball) {
+                return this.visible &&
+                       ball.x < this.x + this.width &&
+                       ball.x + ball.size > this.x &&
+                       ball.y < this.y + this.height &&
+                       ball.y + ball.size > this.y;
+            }
+        }
+
+        class BreakoutGame {
+            constructor() {
+                this.particleSystem = new ParticleSystem();
+                this.powerups = [];
+                this.activePowerups = {};
+                this.currentLevel = 1;
+                this.midiNote = null;
+                this.targetX = WIDTH / 2 - PADDLE_WIDTH / 2;
+                this.keysPressed = {};
+                this.resetGame();
+            }
+
+            resetGame() {
+                this.paddle = {
+                    x: WIDTH / 2 - PADDLE_WIDTH / 2,
+                    y: HEIGHT - 40,
+                    width: PADDLE_WIDTH,
+                    height: PADDLE_HEIGHT
+                };
+                this.balls = [{
+                    pos: [WIDTH / 2, HEIGHT / 2],
+                    speed: [5, -5],
+                    x: WIDTH / 2,
+                    y: HEIGHT / 2,
+                    size: BALL_SIZE
+                }];
+                this.paddleWidth = PADDLE_WIDTH;
+                this.createLevel(this.currentLevel);
+                this.gameOver = false;
+                this.score = 0;
+                this.targetX = this.paddle.x;
+            }
+
+            createLevel(level) {
+                this.bricks = [];
+                const layout = LevelDesign.getLevelLayout(level);
+
+                if (!layout) {
+                    for (let row = 0; row < BRICK_ROWS; row++) {
+                        for (let col = 0; col < BRICK_COLS; col++) {
+                            const brick = new Brick(
+                                col * (BRICK_WIDTH + BRICK_PADDING) + BRICK_PADDING,
+                                row * (BRICK_HEIGHT + BRICK_PADDING) + BRICK_PADDING,
+                                BRICK_WIDTH,
+                                BRICK_HEIGHT
+                            );
+                            this.bricks.push(brick);
+                        }
+                    }
+                    return;
+                }
+
+                for (let row = 0; row < layout.length; row++) {
+                    const line = layout[row];
+                    for (let col = 0; col < line.length; col++) {
+                        const char = line[col];
+                        if (char !== ' ') {
+                            const colorMap = {
+                                'R': RED,
+                                'O': ORANGE,
+                                'Y': YELLOW,
+                                'G': GREEN,
+                                'B': BLUE
+                            };
+
+                            const brick = new Brick(
+                                col * (BRICK_WIDTH + BRICK_PADDING) + BRICK_PADDING,
+                                row * (BRICK_HEIGHT + BRICK_PADDING) + BRICK_PADDING,
+                                BRICK_WIDTH,
+                                BRICK_HEIGHT
+                            );
+                            brick.color = colorMap[char];
+                            this.bricks.push(brick);
+                        }
+                    }
+                }
+            }
+
+            midiToPaddleX(note) {
+                const pitchClass = note % NUM_NOTES;
+                const segmentWidth = WIDTH / (NUM_NOTES - 1);
+                const xPos = pitchClass * segmentWidth + segmentWidth / 2 - this.paddleWidth / 2;
+                return Math.max(0, Math.min(WIDTH - this.paddleWidth, xPos));
+            }
+
+            handleMIDIMessage(note, velocity) {
+                if (velocity > 0) {
+                    this.midiNote = note;
+                    this.targetX = Math.floor(this.midiToPaddleX(this.midiNote));
+                }
+            }
+
+            handleKeyDown(key) {
+                this.keysPressed[key] = true;
+                if (key === 'r' && this.gameOver) {
+                    this.currentLevel = 1;
+                    this.resetGame();
+                }
+            }
+
+            handleKeyUp(key) {
+                this.keysPressed[key] = false;
+            }
+
+            update() {
+                if (!this.gameOver) {
+                    // Keyboard controls
+                    if (this.keysPressed['ArrowLeft'] && this.paddle.x > 0) {
+                        this.paddle.x -= 7;
+                        this.targetX = this.paddle.x;
+                    }
+                    if (this.keysPressed['ArrowRight'] && this.paddle.x + this.paddleWidth < WIDTH) {
+                        this.paddle.x += 7;
+                        this.targetX = this.paddle.x;
+                    }
+
+                    // Smooth movement towards target
+                    const dx = this.targetX - this.paddle.x;
+                    if (Math.abs(dx) > 1) {
+                        const slideFactor = 0.2;
+                        const moveStep = dx * slideFactor;
+                        this.paddle.x += moveStep;
+                    } else {
+                        this.paddle.x = this.targetX;
+                    }
+
+                    this.paddle.x = Math.max(0, Math.min(WIDTH - this.paddleWidth, this.paddle.x));
+
+                    this.updateBall();
+                    this.updatePowerups();
+                    this.particleSystem.update();
+
+                    if (!this.bricks.some(brick => brick.visible)) {
+                        this.currentLevel++;
+                        this.resetGame();
+                    }
+                }
+            }
+
+            updatePowerups() {
+                for (let i = this.powerups.length - 1; i >= 0; i--) {
+                    const powerup = this.powerups[i];
+                    powerup.update();
+                    if (powerup.collidesWith(this.paddle) && powerup.active) {
+                        this.activatePowerup(powerup);
+                        powerup.active = false;
+                    } else if (powerup.y > HEIGHT) {
+                        this.powerups.splice(i, 1);
+                    }
+                }
+
+                const currentTime = Date.now();
+                for (const powerType in this.activePowerups) {
+                    const endTime = this.activePowerups[powerType];
+                    if (endTime && currentTime > endTime) {
+                        this.deactivatePowerup(powerType);
+                    }
+                }
+            }
+
+            activatePowerup(powerup) {
+                const currentTime = Date.now();
+                if (powerup.type === 'EXPAND') {
+                    this.paddleWidth = Math.min(PADDLE_WIDTH * 2, WIDTH / 2);
+                } else if (powerup.type === 'SHRINK') {
+                    this.paddleWidth = Math.max(PADDLE_WIDTH / 2, 30);
+                } else if (powerup.type === 'SLOW') {
+                    for (const ball of this.balls) {
+                        ball.speed = [ball.speed[0] * 0.5, ball.speed[1] * 0.5];
+                    }
+                } else if (powerup.type === 'MULTI_BALL') {
+                    const newBall = {
+                        pos: [...this.balls[0].pos],
+                        speed: [(Math.random() < 0.5 ? -1 : 1) * 5, -5],
+                        x: this.balls[0].pos[0],
+                        y: this.balls[0].pos[1],
+                        size: BALL_SIZE
+                    };
+                    this.balls.push(newBall);
+                }
+
+                if (powerup.duration) {
+                    this.activePowerups[powerup.type] = currentTime + powerup.duration * 1000;
+                }
+            }
+
+            deactivatePowerup(powerType) {
+                if (powerType === 'EXPAND' || powerType === 'SHRINK') {
+                    this.paddleWidth = PADDLE_WIDTH;
+                } else if (powerType === 'SLOW') {
+                    for (const ball of this.balls) {
+                        ball.speed = [ball.speed[0] * 2, ball.speed[1] * 2];
+                    }
+                }
+                delete this.activePowerups[powerType];
+            }
+
+            updateBall() {
+                for (let i = this.balls.length - 1; i >= 0; i--) {
+                    const ball = this.balls[i];
+                    ball.pos[0] += ball.speed[0] * BALL_SPEED;
+                    ball.pos[1] += ball.speed[1] * BALL_SPEED;
+                    ball.x = ball.pos[0] - BALL_SIZE / 2;
+                    ball.y = ball.pos[1] - BALL_SIZE / 2;
+
+                    // Wall collisions
+                    if (ball.pos[0] <= 0) {
+                        ball.pos[0] = 0;
+                        ball.speed[0] = Math.abs(ball.speed[0]);
+                    } else if (ball.pos[0] >= WIDTH) {
+                        ball.pos[0] = WIDTH;
+                        ball.speed[0] = -Math.abs(ball.speed[0]);
+                    }
+
+                    if (ball.pos[1] <= 0) {
+                        ball.pos[1] = 0;
+                        ball.speed[1] *= -1;
+                    }
+
+                    // Paddle collision
+                    if (ball.x < this.paddle.x + this.paddleWidth &&
+                        ball.x + ball.size > this.paddle.x &&
+                        ball.y < this.paddle.y + this.paddle.height &&
+                        ball.y + ball.size > this.paddle.y) {
+                        
+                        ball.speed[1] = -Math.abs(ball.speed[1]);
+                        const relativeIntersectX = (this.paddle.x + this.paddleWidth / 2) - ball.pos[0];
+                        const normalizedIntersect = relativeIntersectX / (this.paddleWidth / 2);
+                        const bounceAngle = normalizedIntersect * 60;
+
+                        const speed = Math.sqrt(ball.speed[0] ** 2 + ball.speed[1] ** 2);
+                        ball.speed[0] = -Math.sin(bounceAngle * Math.PI / 180) * speed;
+                        ball.speed[1] = -Math.cos(bounceAngle * Math.PI / 180) * speed;
+                    }
+
+                    // Bottom collision (lose ball)
+                    if (ball.pos[1] >= HEIGHT) {
+                        this.balls.splice(i, 1);
+                        if (this.balls.length === 0) {
+                            this.gameOver = true;
+                        }
+                        continue;
+                    }
+
+                    // Brick collisions
+                    for (const brick of this.bricks) {
+                        if (brick.collidesWith(ball)) {
+                            brick.visible = false;
+                            ball.speed[1] *= -1;
+                            this.score += 10;
+                            this.particleSystem.addParticles(
+                                brick.centerX, brick.centerY, brick.color, 20
+                            );
+                            if (Math.random() < 0.2) {
+                                const powerTypes = Object.keys(PowerUp.TYPES);
+                                const powerType = powerTypes[Math.floor(Math.random() * powerTypes.length)];
+                                this.powerups.push(new PowerUp(brick.centerX, brick.centerY, powerType));
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+
+            drawGlow(x, y, color, radius = 30) {
+                const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+                
+                // Parse hex color
+                const r = parseInt(color.slice(1, 3), 16);
+                const g = parseInt(color.slice(3, 5), 16);
+                const b = parseInt(color.slice(5, 7), 16);
+                
+                gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.4)`);
+                gradient.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, 0.2)`);
+                gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+            }
+
+            draw() {
+                // Clear screen
+                ctx.fillStyle = BLACK;
+                ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+                // Draw glows for bricks
+                for (const brick of this.bricks) {
+                    if (brick.visible) {
+                        this.drawGlow(brick.x + BRICK_WIDTH / 2,
+                                     brick.y + BRICK_HEIGHT / 2,
+                                     brick.color);
+                    }
+                }
+
+                // Draw paddle
+                ctx.fillStyle = WHITE;
+                ctx.fillRect(this.paddle.x, this.paddle.y, this.paddleWidth, this.paddle.height);
+
+                // Draw balls
+                ctx.fillStyle = WHITE;
+                for (const ball of this.balls) {
+                    ctx.beginPath();
+                    ctx.arc(ball.pos[0], ball.pos[1], BALL_SIZE / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Draw bricks
+                for (const brick of this.bricks) {
+                    if (brick.visible) {
+                        ctx.fillStyle = brick.color;
+                        ctx.fillRect(brick.x, brick.y, brick.width, brick.height);
+                    }
+                }
+
+                // Draw particles
+                this.particleSystem.draw(ctx);
+
+                // Draw powerups
+                for (const powerup of this.powerups) {
+                    powerup.draw(ctx);
+                }
+
+                // Draw score and level
+                ctx.font = '36px Arial';
+                ctx.fillStyle = WHITE;
+                ctx.fillText(`Score: ${this.score}`, 10, HEIGHT - 10);
+                ctx.fillText(`Level: ${this.currentLevel}`, 10, HEIGHT - 40);
+
+                // Game over screen
+                if (this.gameOver) {
+                    ctx.font = '36px Arial';
+                    ctx.fillStyle = WHITE;
+                    const text = 'Game Over! Press R to restart';
+                    const textWidth = ctx.measureText(text).width;
+                    ctx.fillText(text, WIDTH / 2 - textWidth / 2, HEIGHT / 2);
+                }
+            }
+        }
+
+        // Initialize game
+        const game = new BreakoutGame();
+        let midiAccess = null;
+
+        // MIDI Setup
+        async function setupMIDI() {
+            try {
+                midiAccess = await navigator.requestMIDIAccess();
+                console.log('MIDI Access granted');
+                
+                const inputs = Array.from(midiAccess.inputs.values());
+                console.log(`Found ${inputs.length} MIDI input(s)`);
+                
+                if (inputs.length === 0) {
+                    document.getElementById('midiStatus').textContent = 'No MIDI Device Connected';
+                    document.getElementById('midiStatus').className = 'disconnected';
+                    return;
+                }
+
+                inputs.forEach((input, index) => {
+                    console.log(`MIDI Input ${index}: ${input.name}`);
+                    input.onmidimessage = handleMIDIMessage;
+                });
+
+                document.getElementById('midiStatus').textContent = `MIDI Connected: ${inputs[0].name}`;
+                document.getElementById('midiStatus').className = 'connected';
+                document.getElementById('deviceInfo').textContent = `Using ${inputs.length} MIDI input device(s) • Arrow keys also work!`;
+            } catch (err) {
+                console.error('MIDI Access failed:', err);
+                document.getElementById('midiStatus').textContent = 'MIDI Access Denied or Not Supported';
+                document.getElementById('midiStatus').className = 'disconnected';
+            }
+        }
+
+        function handleMIDIMessage(event) {
+            const [status, note, velocity] = event.data;
+
+            // Note on (status 144 with velocity > 0)
+            if (status === 144 && velocity > 0) {
+                game.handleMIDIMessage(note, velocity);
+            }
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            game.handleKeyDown(e.key);
+        });
+
+        document.addEventListener('keyup', (e) => {
+            game.handleKeyUp(e.key);
+        });
+
+        // Game loop
+        function gameLoop() {
+            game.update();
+            game.draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Initialize
+        setupMIDI();
+        gameLoop();
+    </script>
+</body>
+</html>

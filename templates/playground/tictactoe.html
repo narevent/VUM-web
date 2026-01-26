@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIDI Tic Tac Toe Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            color: white;
+        }
+        canvas {
+            border: 2px solid #333;
+            display: block;
+            cursor: pointer;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #222;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .connected { color: #0f0; }
+        .disconnected { color: #f00; }
+        #grid-layout {
+            margin-top: 10px;
+            font-size: 12px;
+            font-family: monospace;
+            line-height: 1.5;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="800"></canvas>
+    <div id="status">
+        <div id="midiStatus" class="disconnected">No MIDI Device Connected</div>
+        <div id="deviceInfo" style="margin-top: 5px; font-size: 12px;">
+            Play notes to place marks! Grid layout (mod 36):
+        </div>
+        <div id="grid-layout">
+            [6]  [8]  [10]<br>
+            [30] [32] [34]<br>
+            [18] [20] [22]
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Constants
+        const WIDTH = 800;
+        const HEIGHT = 800;
+        const FPS = 60;
+
+        class TicTacToeGame {
+            constructor() {
+                // Game settings
+                this.cellSize = WIDTH / 3;
+
+                // Colors
+                this.gridColor = '#ffffff';
+                this.bgColor = '#000000';
+                this.xColor = '#ff5050';
+                this.oColor = '#50a0ff';
+                this.fontColor = '#ffffff';
+
+                // MIDI mapping (note % 36)
+                this.midiNotes = {
+                    6: 0, 8: 1, 10: 2,
+                    30: 3, 32: 4, 34: 5,
+                    18: 6, 20: 7, 22: 8
+                };
+
+                this.resetGame();
+            }
+
+            resetGame() {
+                this.board = Array(9).fill(null);
+                this.currentPlayer = 'X';
+                this.winner = null;
+            }
+
+            handleKeyPress(key) {
+                if (key === 'r') {
+                    this.resetGame();
+                }
+            }
+
+            handleMouseClick(x, y) {
+                if (this.winner) return;
+
+                const col = Math.floor(x / this.cellSize);
+                const row = Math.floor(y / this.cellSize);
+                const index = row * 3 + col;
+
+                if (index >= 0 && index < 9 && this.board[index] === null) {
+                    this.board[index] = this.currentPlayer;
+                    if (!this.checkWinner()) {
+                        this.currentPlayer = this.currentPlayer === 'X' ? 'O' : 'X';
+                    }
+                }
+            }
+
+            handleMIDIMessage(note, velocity) {
+                if (velocity > 0) {
+                    const noteInRange = note % 36;
+                    if (noteInRange in this.midiNotes) {
+                        const index = this.midiNotes[noteInRange];
+                        if (this.board[index] === null && !this.winner) {
+                            this.board[index] = this.currentPlayer;
+                            if (!this.checkWinner()) {
+                                this.currentPlayer = this.currentPlayer === 'X' ? 'O' : 'X';
+                            }
+                        }
+                    }
+                }
+            }
+
+            checkWinner() {
+                const winPatterns = [
+                    [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+                    [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+                    [0, 4, 8], [2, 4, 6]             // diagonals
+                ];
+
+                for (const pattern of winPatterns) {
+                    const [a, b, c] = pattern;
+                    if (this.board[a] && 
+                        this.board[a] === this.board[b] && 
+                        this.board[a] === this.board[c]) {
+                        this.winner = this.board[a];
+                        return true;
+                    }
+                }
+
+                if (this.board.every(spot => spot !== null)) {
+                    this.winner = 'Draw';
+                    return true;
+                }
+
+                return false;
+            }
+
+            update() {
+                // Game logic updates if needed
+            }
+
+            draw() {
+                // Clear screen
+                ctx.fillStyle = this.bgColor;
+                ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+                // Draw grid lines
+                ctx.strokeStyle = this.gridColor;
+                ctx.lineWidth = 2;
+                for (let i = 1; i < 3; i++) {
+                    // Vertical lines
+                    ctx.beginPath();
+                    ctx.moveTo(i * this.cellSize, 0);
+                    ctx.lineTo(i * this.cellSize, HEIGHT);
+                    ctx.stroke();
+
+                    // Horizontal lines
+                    ctx.beginPath();
+                    ctx.moveTo(0, i * this.cellSize);
+                    ctx.lineTo(WIDTH, i * this.cellSize);
+                    ctx.stroke();
+                }
+
+                // Draw X and O
+                ctx.font = 'bold 36px Courier New';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                for (let i = 0; i < this.board.length; i++) {
+                    const mark = this.board[i];
+                    const x = (i % 3) * this.cellSize + this.cellSize / 2;
+                    const y = Math.floor(i / 3) * this.cellSize + this.cellSize / 2;
+
+                    if (mark === 'X') {
+                        ctx.fillStyle = this.xColor;
+                        ctx.fillText('X', x, y);
+                    } else if (mark === 'O') {
+                        ctx.fillStyle = this.oColor;
+                        ctx.fillText('O', x, y);
+                    }
+                }
+
+                // Draw winner message
+                if (this.winner) {
+                    ctx.font = 'bold 36px Courier New';
+                    ctx.fillStyle = this.fontColor;
+                    
+                    const msg = this.winner === 'Draw' ? "It's a Draw!" : `${this.winner} Wins!`;
+                    ctx.fillText(msg, WIDTH / 2, HEIGHT / 2);
+
+                    ctx.font = '20px Courier New';
+                    ctx.fillText('Press R to reset', WIDTH / 2, HEIGHT / 2 + 40);
+                }
+            }
+        }
+
+        // Initialize game
+        const game = new TicTacToeGame();
+        let midiAccess = null;
+
+        // MIDI Setup
+        async function setupMIDI() {
+            try {
+                midiAccess = await navigator.requestMIDIAccess();
+                console.log('MIDI Access granted');
+                
+                const inputs = Array.from(midiAccess.inputs.values());
+                console.log(`Found ${inputs.length} MIDI input(s)`);
+                
+                if (inputs.length === 0) {
+                    document.getElementById('midiStatus').textContent = 'No MIDI Device Connected';
+                    document.getElementById('midiStatus').className = 'disconnected';
+                    document.getElementById('deviceInfo').textContent = 'Click cells to place marks!';
+                    document.getElementById('grid-layout').style.display = 'none';
+                    return;
+                }
+
+                inputs.forEach((input, index) => {
+                    console.log(`MIDI Input ${index}: ${input.name}`);
+                    input.onmidimessage = handleMIDIMessage;
+                });
+
+                document.getElementById('midiStatus').textContent = `MIDI Connected: ${inputs[0].name}`;
+                document.getElementById('midiStatus').className = 'connected';
+            } catch (err) {
+                console.error('MIDI Access failed:', err);
+                document.getElementById('midiStatus').textContent = 'MIDI Access Denied or Not Supported';
+                document.getElementById('midiStatus').className = 'disconnected';
+                document.getElementById('deviceInfo').textContent = 'Click cells to place marks!';
+                document.getElementById('grid-layout').style.display = 'none';
+            }
+        }
+
+        function handleMIDIMessage(event) {
+            const [status, note, velocity] = event.data;
+
+            // Note on (status 144 with velocity > 0)
+            if (status === 144 && velocity > 0) {
+                game.handleMIDIMessage(note, velocity);
+            }
+        }
+
+        // Mouse controls
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            game.handleMouseClick(x, y);
+        });
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            game.handleKeyPress(e.key);
+        });
+
+        // Game loop
+        function gameLoop() {
+            game.update();
+            game.draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Initialize
+        setupMIDI();
+        gameLoop();
+    </script>
+</body>
+</html>

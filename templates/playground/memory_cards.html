@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIDI Memory Card Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            color: white;
+        }
+        canvas {
+            border: 2px solid #333;
+            display: block;
+            cursor: pointer;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #222;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .connected { color: #0f0; }
+        .disconnected { color: #f00; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="420" height="420"></canvas>
+    <div id="status">
+        <div id="midiStatus" class="disconnected">No MIDI Device Connected</div>
+        <div id="deviceInfo" style="margin-top: 5px; font-size: 12px;">
+            Play notes to flip cards! Match pairs to win.
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Constants
+        const WIDTH = 420;
+        const HEIGHT = 420;
+        const FPS = 60;
+
+        class MemoryCardGame {
+            constructor() {
+                // Game settings
+                this.gridW = 6;
+                this.gridH = 6;
+                this.cardW = WIDTH / this.gridW;
+                this.cardH = HEIGHT / this.gridH;
+                this.margin = 4;
+                this.delayTime = 1000; // milliseconds to display mismatched pair
+                this.delayStart = null;
+                this.numKeys = 36;
+
+                // Colors
+                this.bgColor = '#000000';
+                this.cardBack = '#505050';
+                this.textColor = '#ffff00';
+
+                this.resetGame();
+            }
+
+            resetGame() {
+                // Create 36 cards: 9 values × 4 = 36 cards
+                this.cards = [];
+                for (let i = 1; i <= 9; i++) {
+                    this.cards.push(i, i, i, i);
+                }
+                // Shuffle
+                for (let i = this.cards.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [this.cards[i], this.cards[j]] = [this.cards[j], this.cards[i]];
+                }
+
+                this.flipped = [];
+                this.matched = [];
+                this.flippedCount = 0;
+                this.level = 0;
+                this.gameOver = false;
+            }
+
+            handleKeyPress(key) {
+                if (key === 'r') {
+                    this.resetGame();
+                }
+            }
+
+            handleMouseClick(x, y) {
+                if (this.gameOver) return;
+
+                const col = Math.floor(x / this.cardW);
+                const row = Math.floor(y / this.cardH);
+                const index = row * this.gridW + col;
+
+                if (index >= 0 && index < this.cards.length) {
+                    this.flipCard(index);
+                }
+            }
+
+            handleMIDIMessage(note, velocity) {
+                if (velocity > 0) {
+                    const index = note % this.numKeys;
+                    this.flipCard(index);
+                }
+            }
+
+            flipCard(index) {
+                if (this.flipped.includes(index) || this.matched.includes(index) || this.gameOver) {
+                    return;
+                }
+
+                this.flipped.push(index);
+
+                if (this.flipped.length === 2) {
+                    this.flippedCount++;
+                    const [a, b] = this.flipped;
+                    if (this.cards[a] === this.cards[b]) {
+                        this.matched.push(...this.flipped);
+                        this.flipped = [];
+                    } else {
+                        this.delayStart = Date.now();
+                    }
+                }
+
+                if (this.matched.length === this.cards.length) {
+                    this.gameOver = true;
+                }
+            }
+
+            update() {
+                // Handle delay for mismatched pair
+                if (this.delayStart) {
+                    const now = Date.now();
+                    if (now - this.delayStart > this.delayTime) {
+                        this.flipped = [];
+                        this.delayStart = null;
+                    }
+                }
+            }
+
+            drawCard(x, y, val, flipped = false, matched = false) {
+                const rect = {
+                    x: x + this.margin / 2,
+                    y: y + this.margin / 2,
+                    w: this.cardW - this.margin,
+                    h: this.cardH - this.margin
+                };
+
+                if (flipped || matched) {
+                    // Draw face-up card with color based on value
+                    const r = (val * 20) % 255;
+                    const g = 150;
+                    const b = (val * 40) % 255;
+                    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                    ctx.beginPath();
+                    ctx.roundRect(rect.x, rect.y, rect.w, rect.h, 8);
+                    ctx.fill();
+
+                    // Draw value
+                    ctx.font = 'bold 22px Courier New';
+                    ctx.fillStyle = '#000000';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(val.toString(), rect.x + rect.w / 2, rect.y + rect.h / 2);
+                } else {
+                    // Draw face-down card
+                    ctx.fillStyle = this.cardBack;
+                    ctx.beginPath();
+                    ctx.roundRect(rect.x, rect.y, rect.w, rect.h, 8);
+                    ctx.fill();
+                }
+            }
+
+            draw() {
+                // Clear screen
+                ctx.fillStyle = this.bgColor;
+                ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+                // Draw all cards
+                for (let i = 0; i < this.cards.length; i++) {
+                    const val = this.cards[i];
+                    const x = (i % this.gridW) * this.cardW;
+                    const y = Math.floor(i / this.gridW) * this.cardH;
+                    const flipped = this.flipped.includes(i);
+                    const matched = this.matched.includes(i);
+                    this.drawCard(x, y, val, flipped, matched);
+                }
+
+                // Draw overlay text
+                ctx.font = '16px Courier New';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'top';
+                ctx.fillStyle = this.textColor;
+                ctx.fillText(`Moves: ${this.flippedCount}`, 10, 10);
+                
+                ctx.textAlign = 'right';
+                ctx.fillText(`Level: ${this.level}`, WIDTH - 10, 10);
+
+                // Draw game over message
+                if (this.gameOver) {
+                    ctx.font = 'bold 22px Courier New';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = '#ffff00';
+                    ctx.fillText('YOU WIN!', WIDTH / 2, HEIGHT / 2);
+                    
+                    ctx.font = '16px Courier New';
+                    ctx.fillStyle = '#c8c8c8';
+                    ctx.fillText('Press R to restart', WIDTH / 2, HEIGHT / 2 + 30);
+                }
+            }
+        }
+
+        // Initialize game
+        const game = new MemoryCardGame();
+        let midiAccess = null;
+
+        // MIDI Setup
+        async function setupMIDI() {
+            try {
+                midiAccess = await navigator.requestMIDIAccess();
+                console.log('MIDI Access granted');
+                
+                const inputs = Array.from(midiAccess.inputs.values());
+                console.log(`Found ${inputs.length} MIDI input(s)`);
+                
+                if (inputs.length === 0) {
+                    document.getElementById('midiStatus').textContent = 'No MIDI Device Connected';
+                    document.getElementById('midiStatus').className = 'disconnected';
+                    document.getElementById('deviceInfo').textContent = 'Click cards to flip! Match pairs to win.';
+                    return;
+                }
+
+                inputs.forEach((input, index) => {
+                    console.log(`MIDI Input ${index}: ${input.name}`);
+                    input.onmidimessage = handleMIDIMessage;
+                });
+
+                document.getElementById('midiStatus').textContent = `MIDI Connected: ${inputs[0].name}`;
+                document.getElementById('midiStatus').className = 'connected';
+                document.getElementById('deviceInfo').textContent = 'Play notes to flip cards! Match pairs to win.';
+            } catch (err) {
+                console.error('MIDI Access failed:', err);
+                document.getElementById('midiStatus').textContent = 'MIDI Access Denied or Not Supported';
+                document.getElementById('midiStatus').className = 'disconnected';
+                document.getElementById('deviceInfo').textContent = 'Click cards to flip! Match pairs to win.';
+            }
+        }
+
+        function handleMIDIMessage(event) {
+            const [status, note, velocity] = event.data;
+
+            // Note on (status 144 with velocity > 0)
+            if (status === 144 && velocity > 0) {
+                game.handleMIDIMessage(note, velocity);
+            }
+        }
+
+        // Mouse controls
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            game.handleMouseClick(x, y);
+        });
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            game.handleKeyPress(e.key);
+        });
+
+        // Game loop
+        function gameLoop() {
+            game.update();
+            game.draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Initialize
+        setupMIDI();
+        gameLoop();
+    </script>
+</body>
+</html>

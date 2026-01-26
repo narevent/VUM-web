@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIDI Tetris Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            color: white;
+        }
+        canvas {
+            border: 2px solid #333;
+            display: block;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #222;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .connected { color: #0f0; }
+        .disconnected { color: #f00; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="480" height="600"></canvas>
+    <div id="status">
+        <div id="midiStatus" class="disconnected">No MIDI Device Connected</div>
+        <div id="deviceInfo" style="margin-top: 5px; font-size: 12px;">
+            C/E: Left | D/F/G: Right | Black keys: Rotate | A: Soft Drop | B: Hard Drop
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Constants
+        const CELL_SIZE = 30;
+        const COLUMNS = 10;
+        const ROWS = 20;
+        const VISIBLE_ROWS = ROWS;
+        const TOP_BUFFER = 0;
+        const WIDTH = CELL_SIZE * (COLUMNS + 6);
+        const HEIGHT = CELL_SIZE * VISIBLE_ROWS;
+        const FPS = 60;
+
+        // Colors
+        const BLACK = '#000000';
+        const GRAY = '#323232';
+        const WHITE = '#ffffff';
+        const BORDER = '#1e1e1e';
+
+        const PIECE_COLORS = {
+            'I': '#00f0f0',
+            'J': '#0000f0',
+            'L': '#f0a000',
+            'O': '#f0f000',
+            'S': '#00f000',
+            'T': '#a000f0',
+            'Z': '#f00000',
+        };
+
+        // MIDI note mappings (mod 12)
+        const MIDI_MOVE_LEFT = new Set([0, 4]); // C, E
+        const MIDI_MOVE_RIGHT = new Set([2, 5, 7]); // D, F, G
+        const MIDI_ROTATE_CW = new Set([3, 10]); // D#, A#
+        const MIDI_ROTATE_CCW = new Set([1, 6, 8]); // C#, F#, G#
+        const MIDI_SOFT_DROP = 9; // A
+        const MIDI_HARD_DROP = 11; // B
+
+        // Piece shapes
+        const SHAPES = {
+            'I': [
+                [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]],
+                [[0,0,1,0], [0,0,1,0], [0,0,1,0], [0,0,1,0]],
+            ],
+            'J': [
+                [[1,0,0,0],[1,1,1,0],[0,0,0,0],[0,0,0,0]],
+                [[0,1,1,0],[0,1,0,0],[0,1,0,0],[0,0,0,0]],
+                [[0,0,0,0],[1,1,1,0],[0,0,1,0],[0,0,0,0]],
+                [[0,1,0,0],[0,1,0,0],[1,1,0,0],[0,0,0,0]],
+            ],
+            'L': [
+                [[0,0,1,0],[1,1,1,0],[0,0,0,0],[0,0,0,0]],
+                [[0,1,0,0],[0,1,0,0],[0,1,1,0],[0,0,0,0]],
+                [[0,0,0,0],[1,1,1,0],[1,0,0,0],[0,0,0,0]],
+                [[1,1,0,0],[0,1,0,0],[0,1,0,0],[0,0,0,0]],
+            ],
+            'O': [
+                [[1,1],[1,1]],
+            ],
+            'S': [
+                [[0,1,1,0],[1,1,0,0],[0,0,0,0],[0,0,0,0]],
+                [[0,1,0,0],[0,1,1,0],[0,0,1,0],[0,0,0,0]],
+            ],
+            'T': [
+                [[0,1,0,0],[1,1,1,0],[0,0,0,0],[0,0,0,0]],
+                [[0,1,0,0],[0,1,1,0],[0,1,0,0],[0,0,0,0]],
+                [[0,0,0,0],[1,1,1,0],[0,1,0,0],[0,0,0,0]],
+                [[0,1,0,0],[1,1,0,0],[0,1,0,0],[0,0,0,0]],
+            ],
+            'Z': [
+                [[1,1,0,0],[0,1,1,0],[0,0,0,0],[0,0,0,0]],
+                [[0,0,1,0],[0,1,1,0],[0,1,0,0],[0,0,0,0]],
+            ],
+        };
+
+        // Normalize shapes to 4x4
+        for (const key in SHAPES) {
+            const rots = SHAPES[key];
+            const newRots = [];
+            for (const rot of rots) {
+                const size = rot.length;
+                const padded = rot.map(row => {
+                    const newRow = [...row];
+                    while (newRow.length < 4) newRow.push(0);
+                    return newRow;
+                });
+                while (padded.length < 4) {
+                    padded.push([0, 0, 0, 0]);
+                }
+                newRots.push(padded);
+            }
+            SHAPES[key] = newRots;
+        }
+
+        class Piece {
+            constructor(kind) {
+                this.kind = kind;
+                this.rotations = SHAPES[kind];
+                this.rotation = 0;
+                this.matrix = this.rotations[this.rotation];
+                this.size = this.matrix.length;
+                this.x = Math.floor(COLUMNS / 2) - Math.floor(this.size / 2);
+                this.y = -2;
+            }
+
+            rotate(cw = true) {
+                if (cw) {
+                    this.rotation = (this.rotation + 1) % this.rotations.length;
+                } else {
+                    this.rotation = (this.rotation - 1 + this.rotations.length) % this.rotations.length;
+                }
+                this.matrix = this.rotations[this.rotation];
+                this.size = this.matrix.length;
+            }
+
+            getCells() {
+                const cells = [];
+                for (let r = 0; r < this.size; r++) {
+                    for (let c = 0; c < this.size; c++) {
+                        if (this.matrix[r][c]) {
+                            cells.push([this.x + c, this.y + r]);
+                        }
+                    }
+                }
+                return cells;
+            }
+        }
+
+        class Bag {
+            constructor() {
+                this.bag = [];
+                this.fill();
+            }
+
+            fill() {
+                const pieces = Object.keys(SHAPES);
+                for (let i = pieces.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [pieces[i], pieces[j]] = [pieces[j], pieces[i]];
+                }
+                this.bag.push(...pieces);
+            }
+
+            next() {
+                if (this.bag.length === 0) {
+                    this.fill();
+                }
+                return this.bag.shift();
+            }
+        }
+
+        class TetrisGame {
+            constructor() {
+                this.grid = Array(ROWS + TOP_BUFFER).fill(null).map(() => Array(COLUMNS).fill(null));
+                this.bag = new Bag();
+                this.holdPiece = null;
+                this.holdLocked = false;
+                this.nextQueue = [];
+                for (let i = 0; i < 5; i++) {
+                    this.nextQueue.push(new Piece(this.bag.next()));
+                }
+                this.spawnPiece();
+
+                this.level = 0;
+                this.lines = 0;
+                this.score = 0;
+                this.gameOver = false;
+                this.paused = false;
+                this.dropPressed = false;
+                this.dropInterval = 50;
+                this.lastSoftDrop = 0;
+                this.lockDelay = 500;
+                this.lockTimer = 0;
+                this.locking = false;
+                this.clearAnimations = [];
+                this.lastGravityTime = Date.now();
+                this.midiSoftDropActive = false;
+                this.keysPressed = {};
+            }
+
+            spawnPiece() {
+                this.current = this.nextQueue.shift();
+                this.nextQueue.push(new Piece(this.bag.next()));
+                this.current.x = Math.floor(COLUMNS / 2) - Math.floor(this.current.size / 2);
+                this.current.y = -2;
+                this.holdLocked = false;
+
+                if (this.checkCollision(this.current)) {
+                    this.gameOver = true;
+                }
+            }
+
+            hold() {
+                if (this.holdLocked) return;
+                if (this.holdPiece === null) {
+                    this.holdPiece = this.current.kind;
+                    this.spawnPiece();
+                } else {
+                    const tmp = this.current.kind;
+                    this.current = new Piece(this.holdPiece);
+                    this.holdPiece = tmp;
+                    this.current.x = Math.floor(COLUMNS / 2) - Math.floor(this.current.size / 2);
+                    this.current.y = -2;
+                    if (this.checkCollision(this.current)) {
+                        this.gameOver = true;
+                    }
+                }
+                this.holdLocked = true;
+            }
+
+            checkCollision(piece, dx = 0, dy = 0) {
+                for (const [x, y] of piece.getCells()) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if (nx < 0 || nx >= COLUMNS || ny >= ROWS + TOP_BUFFER) {
+                        return true;
+                    }
+                    if (ny >= 0 && this.grid[ny][nx] !== null) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            lockPiece() {
+                for (const [x, y] of this.current.getCells()) {
+                    if (y >= 0 && y < ROWS + TOP_BUFFER && x >= 0 && x < COLUMNS) {
+                        this.grid[y][x] = this.current.kind;
+                    }
+                }
+
+                if (this.current.getCells().some(([x, y]) => y < TOP_BUFFER)) {
+                    this.gameOver = true;
+                    return;
+                }
+
+                this.clearLines();
+                this.spawnPiece();
+            }
+
+            clearLines() {
+                const linesToClear = [];
+                for (let r = 0; r < ROWS + TOP_BUFFER; r++) {
+                    if (this.grid[r].every(cell => cell !== null)) {
+                        linesToClear.push(r);
+                    }
+                }
+                if (linesToClear.length > 0) {
+                    this.clearAnimations.push({ rows: linesToClear, time: Date.now() });
+                    const count = linesToClear.length;
+                    const basePoints = { 1: 40, 2: 100, 3: 300, 4: 1200 }[count] || 0;
+                    this.score += basePoints * (this.level + 1);
+                    this.lines += count;
+                    this.level = Math.floor(this.lines / 10);
+
+                    for (const r of linesToClear.sort((a, b) => b - a)) {
+                        this.grid.splice(r, 1);
+                        this.grid.unshift(Array(COLUMNS).fill(null));
+                    }
+                }
+            }
+
+            hardDrop() {
+                let distance = 0;
+                while (!this.checkCollision(this.current, 0, 1)) {
+                    this.current.y++;
+                    distance++;
+                }
+                this.score += distance * 2;
+                this.lockPiece();
+            }
+
+            attemptRotate(cw = true) {
+                const originalRot = this.current.rotation;
+                const originalX = this.current.x;
+                const originalY = this.current.y;
+
+                this.current.rotate(cw);
+                if (!this.checkCollision(this.current)) {
+                    return true;
+                }
+
+                const kicks = [[-1, 0], [1, 0], [-2, 0], [2, 0], [0, -1]];
+                for (const [dx, dy] of kicks) {
+                    if (!this.checkCollision(this.current, dx, dy)) {
+                        this.current.x += dx;
+                        this.current.y += dy;
+                        return true;
+                    }
+                }
+
+                this.current.rotation = originalRot;
+                this.current.matrix = this.current.rotations[originalRot];
+                this.current.x = originalX;
+                this.current.y = originalY;
+                return false;
+            }
+
+            move(dx) {
+                if (!this.checkCollision(this.current, dx, 0)) {
+                    this.current.x += dx;
+                }
+            }
+
+            softDrop() {
+                if (!this.checkCollision(this.current, 0, 1)) {
+                    this.current.y++;
+                    this.score++;
+                    return true;
+                } else {
+                    if (!this.locking) {
+                        this.locking = true;
+                        this.lockTimer = Date.now();
+                    }
+                    return false;
+                }
+            }
+
+            handleKeyDown(key) {
+                this.keysPressed[key] = true;
+                if (this.gameOver) {
+                    if (key === 'r') this.restart();
+                    return;
+                }
+                if (key === 'p') {
+                    this.paused = !this.paused;
+                    return;
+                }
+                if (this.paused) return;
+
+                if (key === 'ArrowLeft') {
+                    this.move(-1);
+                    this.locking = false;
+                } else if (key === 'ArrowRight') {
+                    this.move(1);
+                    this.locking = false;
+                } else if (key === 'ArrowDown') {
+                    this.dropPressed = true;
+                    this.lastSoftDrop = Date.now();
+                    this.softDrop();
+                } else if (key === ' ') {
+                    this.hardDrop();
+                } else if (key === 'ArrowUp' || key === 'x') {
+                    if (this.attemptRotate(true)) {
+                        this.locking = false;
+                    }
+                } else if (key === 'z') {
+                    if (this.attemptRotate(false)) {
+                        this.locking = false;
+                    }
+                } else if (key === 'c') {
+                    this.hold();
+                }
+            }
+
+            handleKeyUp(key) {
+                this.keysPressed[key] = false;
+                if (key === 'ArrowDown') {
+                    this.dropPressed = false;
+                }
+            }
+
+            handleMIDIMessage(note, velocity) {
+                const noteInOctave = note % 12;
+
+                if (velocity > 0) {
+                    if (MIDI_MOVE_LEFT.has(noteInOctave)) {
+                        if (!this.gameOver && !this.paused) {
+                            this.move(-1);
+                            this.locking = false;
+                        }
+                    } else if (MIDI_MOVE_RIGHT.has(noteInOctave)) {
+                        if (!this.gameOver && !this.paused) {
+                            this.move(1);
+                            this.locking = false;
+                        }
+                    } else if (MIDI_ROTATE_CW.has(noteInOctave)) {
+                        if (!this.gameOver && !this.paused) {
+                            if (this.attemptRotate(true)) {
+                                this.locking = false;
+                            }
+                        }
+                    } else if (MIDI_ROTATE_CCW.has(noteInOctave)) {
+                        if (!this.gameOver && !this.paused) {
+                            if (this.attemptRotate(false)) {
+                                this.locking = false;
+                            }
+                        }
+                    } else if (noteInOctave === MIDI_SOFT_DROP) {
+                        if (!this.gameOver && !this.paused) {
+                            this.midiSoftDropActive = true;
+                            this.dropInterval = Math.max(20, 100 - Math.floor(velocity * 80 / 127));
+                            this.lastSoftDrop = Date.now();
+                            this.softDrop();
+                        }
+                    } else if (noteInOctave === MIDI_HARD_DROP) {
+                        if (!this.gameOver && !this.paused) {
+                            this.hardDrop();
+                        }
+                    }
+                } else {
+                    if (noteInOctave === MIDI_SOFT_DROP) {
+                        this.midiSoftDropActive = false;
+                    }
+                }
+            }
+
+            updateMidiControls() {
+                if (this.midiSoftDropActive && !this.gameOver && !this.paused) {
+                    const currentTime = Date.now();
+                    if (currentTime - this.lastSoftDrop > this.dropInterval) {
+                        const moved = this.softDrop();
+                        this.lastSoftDrop = currentTime;
+
+                        if (!moved && this.locking) {
+                            if (currentTime - this.lockTimer >= this.lockDelay) {
+                                this.locking = false;
+                                this.lockPiece();
+                                this.lastGravityTime = currentTime;
+                                this.midiSoftDropActive = false;
+                            }
+                        }
+                    }
+                }
+            }
+
+            update() {
+                if (this.gameOver || this.paused) return;
+
+                const currentTime = Date.now();
+                this.updateMidiControls();
+
+                const fallMs = Math.max(1000 - this.level * 50, 80);
+
+                if (currentTime - this.lastGravityTime >= fallMs) {
+                    if (!this.checkCollision(this.current, 0, 1)) {
+                        this.current.y++;
+                        this.lastGravityTime = currentTime;
+                        this.locking = false;
+                    } else {
+                        if (!this.locking) {
+                            this.locking = true;
+                            this.lockTimer = currentTime;
+                        } else {
+                            if (currentTime - this.lockTimer >= this.lockDelay) {
+                                this.locking = false;
+                                this.lockPiece();
+                                this.lastGravityTime = currentTime;
+                                this.dropPressed = false;
+                                this.midiSoftDropActive = false;
+                            }
+                        }
+                    }
+                }
+
+                if (this.dropPressed) {
+                    if (currentTime - this.lastSoftDrop > this.dropInterval) {
+                        const moved = this.softDrop();
+                        this.lastSoftDrop = currentTime;
+
+                        if (!moved && this.locking) {
+                            if (currentTime - this.lockTimer >= this.lockDelay) {
+                                this.locking = false;
+                                this.lockPiece();
+                                this.lastGravityTime = currentTime;
+                                this.dropPressed = false;
+                            }
+                        }
+                    }
+                }
+
+                const now = Date.now();
+                this.clearAnimations = this.clearAnimations.filter(a => now - a.time < 400);
+            }
+
+            drawCell(x, y, color, outline = true) {
+                const px = x * CELL_SIZE;
+                const py = (y - TOP_BUFFER) * CELL_SIZE;
+                if (py + CELL_SIZE <= 0) return;
+
+                ctx.fillStyle = color;
+                ctx.fillRect(px, py, CELL_SIZE, CELL_SIZE);
+                if (outline) {
+                    ctx.strokeStyle = BLACK;
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(px, py, CELL_SIZE, CELL_SIZE);
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = BORDER;
+                ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+                const playRect = { x: 0, y: 0, w: CELL_SIZE * COLUMNS, h: CELL_SIZE * VISIBLE_ROWS };
+                ctx.fillStyle = BLACK;
+                ctx.fillRect(playRect.x, playRect.y, playRect.w, playRect.h);
+
+                for (let r = 0; r < VISIBLE_ROWS; r++) {
+                    for (let c = 0; c < COLUMNS; c++) {
+                        ctx.strokeStyle = BORDER;
+                        ctx.strokeRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    }
+                }
+
+                for (let r = TOP_BUFFER; r < ROWS + TOP_BUFFER; r++) {
+                    for (let c = 0; c < COLUMNS; c++) {
+                        const kind = this.grid[r][c];
+                        if (kind !== null) {
+                            this.drawCell(c, r, PIECE_COLORS[kind]);
+                        }
+                    }
+                }
+
+                if (!this.gameOver) {
+                    for (const [x, y] of this.current.getCells()) {
+                        if (y >= TOP_BUFFER) {
+                            this.drawCell(x, y, PIECE_COLORS[this.current.kind]);
+                        }
+                    }
+                }
+
+                // Ghost piece
+                let ghostY = this.current.y;
+                while (!this.checkCollision(this.current, 0, ghostY - this.current.y + 1)) {
+                    ghostY++;
+                }
+                const savedY = this.current.y;
+                this.current.y = ghostY;
+                for (const [x, y] of this.current.getCells()) {
+                    if (y >= TOP_BUFFER) {
+                        ctx.globalAlpha = 0.3;
+                        ctx.fillStyle = PIECE_COLORS[this.current.kind];
+                        ctx.fillRect(x * CELL_SIZE, (y - TOP_BUFFER) * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                        ctx.globalAlpha = 1;
+                    }
+                }
+                this.current.y = savedY;
+
+                // Next queue
+                const sx = COLUMNS * CELL_SIZE + 20;
+                let sy = 20;
+                ctx.font = '18px Courier New';
+                ctx.fillStyle = WHITE;
+                ctx.fillText('NEXT', sx, sy);
+                sy += 30;
+                for (let i = 0; i < 5; i++) {
+                    this.drawMiniPiece(this.nextQueue[i], sx, sy + i * (CELL_SIZE * 2));
+                }
+
+                // Hold
+                ctx.fillText('HOLD', sx, HEIGHT / 2 - 120);
+                if (this.holdPiece) {
+                    const holdPiece = new Piece(this.holdPiece);
+                    this.drawMiniPiece(holdPiece, sx, HEIGHT / 2 - 90);
+                }
+
+                // HUD
+                const hudX = COLUMNS * CELL_SIZE + 20;
+                const hudY = HEIGHT - 140;
+                ctx.fillText(`SCORE: ${this.score}`, hudX, hudY);
+                ctx.fillText(`LINES: ${this.lines}`, hudX, hudY + 24);
+                ctx.fillText(`LEVEL: ${this.level}`, hudX, hudY + 48);
+
+                if (this.paused) {
+                    ctx.font = 'bold 36px Courier New';
+                    ctx.fillStyle = WHITE;
+                    ctx.fillText('PAUSED', 20, HEIGHT / 2 - 20);
+                }
+
+                if (this.gameOver) {
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+                    ctx.font = 'bold 36px Courier New';
+                    ctx.fillStyle = WHITE;
+                    ctx.fillText('GAME OVER', 40, HEIGHT / 2 - 40);
+                    ctx.font = '18px Courier New';
+                    ctx.fillText('Press R to restart', 40, HEIGHT / 2 + 20);
+                }
+            }
+
+            drawMiniPiece(piece, sx, sy) {
+                const size = piece.size;
+                for (let r = 0; r < size; r++) {
+                    for (let c = 0; c < size; c++) {
+                        if (piece.matrix[r][c]) {
+                            ctx.fillStyle = PIECE_COLORS[piece.kind];
+                            ctx.fillRect(sx + c * (CELL_SIZE / 2), sy + r * (CELL_SIZE / 2), CELL_SIZE / 2, CELL_SIZE / 2);
+                            ctx.strokeStyle = BLACK;
+                            ctx.strokeRect(sx + c * (CELL_SIZE / 2), sy + r * (CELL_SIZE / 2), CELL_SIZE / 2, CELL_SIZE / 2);
+                        }
+                    }
+                }
+            }
+
+            restart() {
+                Object.assign(this, new TetrisGame());
+            }
+        }
+
+        // Initialize game
+        const game = new TetrisGame();
+        let midiAccess = null;
+
+        // MIDI Setup
+        async function setupMIDI() {
+            try {
+                midiAccess = await navigator.requestMIDIAccess();
+                console.log('MIDI Access granted');
+                
+                const inputs = Array.from(midiAccess.inputs.values());
+                console.log(`Found ${inputs.length} MIDI input(s)`);
+                
+                if (inputs.length === 0) {
+                    document.getElementById('midiStatus').textContent = 'No MIDI Device Connected';
+                    document.getElementById('midiStatus').className = 'disconnected';
+                    document.getElementById('deviceInfo').textContent = 'Arrow keys also work!';
+                    return;
+                }
+
+                inputs.forEach((input, index) => {
+                    console.log(`MIDI Input ${index}: ${input.name}`);
+                    input.onmidimessage = handleMIDIMessage;
+                });
+
+                document.getElementById('midiStatus').textContent = `MIDI Connected: ${inputs[0].name}`;
+                document.getElementById('midiStatus').className = 'connected';
+                document.getElementById('deviceInfo').textContent = 'C/E: Left | D/F/G: Right | Black keys: Rotate | A: Soft Drop | B: Hard Drop';
+            } catch (err) {
+                console.error('MIDI Access failed:', err);
+                document.getElementById('midiStatus').textContent = 'MIDI Access Denied or Not Supported';
+                document.getElementById('midiStatus').className = 'disconnected';
+                document.getElementById('deviceInfo').textContent = 'Arrow keys also work!';
+            }
+        }
+
+        function handleMIDIMessage(event) {
+            const [status, note, velocity] = event.data;
+            game.handleMIDIMessage(note, velocity);
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            game.handleKeyDown(e.key);
+        });
+
+        document.addEventListener('keyup', (e) => {
+            game.handleKeyUp(e.key);
+        });
+
+        // Game loop
+        function gameLoop() {
+            game.update();
+            game.draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Initialize
+        setupMIDI();
+        gameLoop();
+    </script>
+</body>
+</html>

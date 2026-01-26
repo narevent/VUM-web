@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piano Shooter Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+        canvas {
+            border: 2px solid #333;
+            display: block;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #222;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .connected { color: #0f0; }
+        .disconnected { color: #f00; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="960" height="540"></canvas>
+    <div id="status">
+        <div id="midiStatus" class="disconnected">No MIDI Device Connected</div>
+        <div id="deviceInfo" style="margin-top: 5px; font-size: 12px;"></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Constants
+        const WIDTH = 960;
+        const HEIGHT = 540;
+        const FPS = 30;
+
+        // Pyxel color palette
+        const COLORS = [
+            '#000000',  // 0: Black
+            '#1d2b53',  // 1: Dark Blue
+            '#7e2553',  // 2: Dark Purple
+            '#008751',  // 3: Dark Green
+            '#ab5236',  // 4: Brown
+            '#5f574f',  // 5: Dark Gray
+            '#c2c3c7',  // 6: Light Gray
+            '#fff1e8',  // 7: White
+            '#ff004d',  // 8: Red
+            '#ffa300',  // 9: Orange
+            '#ffec27',  // 10: Yellow
+            '#00e436',  // 11: Green
+            '#29adff',  // 12: Blue
+            '#83769c',  // 13: Lavender
+            '#ff77a8',  // 14: Pink
+            '#ffccaa'   // 15: Light Peach
+        ];
+
+        class PianoShooterGame {
+            constructor() {
+                // Rate limiting variables
+                this.noteHistory = [];
+                this.maxNotesPerSecond = 12;
+                this.lastNoteTime = Date.now();
+                this.minTimeBetweenNotes = 30; // ms
+                this.warningTimer = 0;
+                this.warningDuration = 600; // frames at 30fps
+                this.isThrottled = false;
+                this.consecutiveWarnings = 0;
+                this.warningThreshold = 3;
+
+                // Game setup
+                this.numPlayers = 3;
+                this.keysPerPlayer = 12;
+                this.numKeys = this.numPlayers * this.keysPerPlayer;
+                
+                this.playerWidth = WIDTH / this.numPlayers;
+                this.keysScale = this.playerWidth / this.keysPerPlayer;
+                
+                this.black = [1, 3, 6, 8, 10]; // Black key positions
+                
+                // Game elements scale
+                this.bulletScale = 6;
+                this.enemyScale = 12;
+                
+                this.initKeys();
+                this.resetGame();
+            }
+
+            resetGame() {
+                this.bullets = [];
+                this.enemies = [];
+                this.scores = [0, 0, 0];
+                this.timeLeft = 91;
+                this.gameOver = false;
+                this.frameCount = 0;
+            }
+
+            initKeys() {
+                this.keys = [];
+                const keysW = [];
+                const keysH = [];
+                const keysY = [];
+                const keysX = [];
+
+                // Initialize basic dimensions
+                for (let i = 0; i < this.numKeys; i++) {
+                    keysW.push(this.keysScale);
+                    keysH.push(12);
+                    keysY.push(HEIGHT - 12 * 2);
+                }
+
+                // Calculate key positions for three players
+                for (let i = 0; i < this.numKeys; i++) {
+                    const playerIdx = Math.floor(i / this.keysPerPlayer);
+                    const keyInPlayer = i % this.keysPerPlayer;
+                    
+                    const baseX = playerIdx * this.playerWidth;
+                    let xPos = baseX + keyInPlayer * this.keysScale;
+                    keysX.push(xPos);
+                    
+                    // Adjust black keys
+                    if (this.black.includes(keyInPlayer)) {
+                        keysY[i] -= keysH[0] / 2;
+                        keysW[i] *= 0.75;
+                        keysX[i] += keysW[i] * 0.2;
+                    }
+                }
+
+                // Create key objects
+                for (let i = 0; i < this.numKeys; i++) {
+                    this.keys.push({
+                        x: keysX[i],
+                        y: keysY[i],
+                        w: keysW[i],
+                        h: keysH[i]
+                    });
+                }
+            }
+
+            checkInputRate() {
+                const currentTime = Date.now();
+                
+                // Check minimum time between notes
+                if (currentTime - this.lastNoteTime < this.minTimeBetweenNotes) {
+                    this.consecutiveWarnings++;
+                    if (this.consecutiveWarnings >= this.warningThreshold) {
+                        this.warningTimer = this.warningDuration;
+                        this.isThrottled = true;
+                    }
+                    return false;
+                }
+
+                this.noteHistory.push(currentTime);
+                
+                // Keep only last 15 notes
+                if (this.noteHistory.length > 15) {
+                    this.noteHistory.shift();
+                }
+                
+                // If we have enough history, check the rate
+                if (this.noteHistory.length >= 5) {
+                    const timeWindow = currentTime - this.noteHistory[0];
+                    if (timeWindow < 1000) {
+                        const notesPerSecond = (this.noteHistory.length / timeWindow) * 1000;
+                        if (notesPerSecond > this.maxNotesPerSecond) {
+                            this.consecutiveWarnings++;
+                            if (this.consecutiveWarnings >= this.warningThreshold) {
+                                this.warningTimer = this.warningDuration;
+                                this.isThrottled = true;
+                            }
+                            return false;
+                        }
+                    }
+                }
+
+                // Reset consecutive warnings if we're not being throttled
+                this.consecutiveWarnings = Math.max(0, this.consecutiveWarnings - 1);
+                this.lastNoteTime = currentTime;
+                this.isThrottled = false;
+                return true;
+            }
+
+            handleMIDIMessage(note, velocity) {
+                if (velocity > 0) {
+                    // Map note to key index (0-35)
+                    const pitch = note % this.numKeys;
+                    
+                    // Check for restart on lowest key (note 0 in the range)
+                    if (this.gameOver && note % this.numKeys === 0) {
+                        this.resetGame();
+                        return;
+                    }
+                    
+                    if (!this.gameOver && this.checkInputRate()) {
+                        this.shootBullet(pitch);
+                    }
+                }
+            }
+
+            shootBullet(key) {
+                const bullet = {
+                    x: this.keys[key].x + this.keys[key].w / 2,
+                    y: this.keys[key].y,
+                    dx: 0,
+                    dy: -4,
+                    col: (key % 12) + 1,
+                    player: Math.floor(key / this.keysPerPlayer)
+                };
+                this.bullets.push(bullet);
+            }
+
+            updateBullets() {
+                for (const bullet of this.bullets) {
+                    bullet.x += bullet.dx;
+                    bullet.y += bullet.dy;
+                }
+                
+                this.bullets = this.bullets.filter(b => this.isOnScreen(b));
+            }
+
+            spawnEnemy() {
+                const playerSection = Math.floor(Math.random() * this.numPlayers);
+                const keyInSection = Math.floor(Math.random() * this.keysPerPlayer);
+                const keyIdx = playerSection * this.keysPerPlayer + keyInSection;
+                
+                const enemyTypes = [
+                    { shape: 'rect', typeId: 1 },
+                    { shape: 'circle', typeId: 2 },
+                    { shape: 'triangle', typeId: 3 }
+                ];
+                const enemyType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+                
+                const enemy = {
+                    x: this.keys[keyIdx].x + this.keys[keyIdx].w / 2,
+                    y: 0,
+                    dy: 2,
+                    col: (keyInSection % 12) + 1,
+                    shape: enemyType.shape,
+                    typeId: enemyType.typeId,
+                    playerSection: playerSection
+                };
+                this.enemies.push(enemy);
+            }
+
+            updateEnemies() {
+                for (const enemy of this.enemies) {
+                    enemy.y += enemy.dy;
+                }
+                
+                this.enemies = this.enemies.filter(e => this.isOnScreen(e));
+            }
+
+            checkCollisions() {
+                // Check bullet-enemy collisions
+                for (let i = this.bullets.length - 1; i >= 0; i--) {
+                    const bullet = this.bullets[i];
+                    for (let j = this.enemies.length - 1; j >= 0; j--) {
+                        const enemy = this.enemies[j];
+                        if (this.isCollision(bullet, enemy)) {
+                            this.bullets.splice(i, 1);
+                            this.enemies.splice(j, 1);
+                            this.scores[bullet.player]++;
+                            break;
+                        }
+                    }
+                }
+
+                // Check enemy-key collisions
+                for (let i = this.enemies.length - 1; i >= 0; i--) {
+                    const enemy = this.enemies[i];
+                    for (const key of this.keys) {
+                        if (this.isCollision(enemy, key)) {
+                            this.enemies.splice(i, 1);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            isCollision(obj1, obj2) {
+                const obj1Size = ('dx' in obj1) ? this.bulletScale : this.enemyScale;
+                const obj2W = obj2.w || obj1Size;
+                const obj2H = obj2.h || obj1Size;
+                
+                return (obj1.x < obj2.x + obj2W &&
+                        obj1.x + obj1Size > obj2.x &&
+                        obj1.y < obj2.y + obj2H &&
+                        obj1.y + obj1Size > obj2.y);
+            }
+
+            updateTime() {
+                if (this.timeLeft > 0) {
+                    this.timeLeft -= 1 / 30;
+                } else {
+                    this.gameOver = true;
+                }
+            }
+
+            update() {
+                if (!this.gameOver) {
+                    this.updateBullets();
+                    this.updateEnemies();
+                    this.checkCollisions();
+                    this.updateTime();
+
+                    if (Math.random() < 0.025) {
+                        this.spawnEnemy();
+                    }
+                }
+                
+                this.frameCount++;
+            }
+
+            draw() {
+                // Clear screen
+                ctx.fillStyle = COLORS[0];
+                ctx.fillRect(0, 0, WIDTH, HEIGHT);
+                
+                // Draw player separation lines
+                ctx.strokeStyle = COLORS[7];
+                ctx.lineWidth = 2;
+                for (let i = 1; i < this.numPlayers; i++) {
+                    const xPos = i * this.playerWidth;
+                    ctx.beginPath();
+                    ctx.moveTo(xPos, 0);
+                    ctx.lineTo(xPos, HEIGHT);
+                    ctx.stroke();
+                }
+                
+                // Draw keys
+                for (let i = 0; i < this.keys.length; i++) {
+                    const key = this.keys[i];
+                    ctx.fillStyle = COLORS[(i % 12) + 1];
+                    ctx.fillRect(key.x, key.y, key.w, key.h);
+                }
+
+                // Draw bullets
+                for (const bullet of this.bullets) {
+                    ctx.fillStyle = COLORS[bullet.col];
+                    ctx.fillRect(bullet.x, bullet.y, this.bulletScale, this.bulletScale);
+                }
+
+                // Draw enemies
+                for (const enemy of this.enemies) {
+                    ctx.fillStyle = COLORS[enemy.col];
+                    
+                    if (enemy.shape === 'rect') {
+                        ctx.fillRect(enemy.x, enemy.y, this.enemyScale, this.enemyScale);
+                    } else if (enemy.shape === 'circle') {
+                        ctx.beginPath();
+                        ctx.arc(enemy.x, enemy.y, this.enemyScale / 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else if (enemy.shape === 'triangle') {
+                        ctx.beginPath();
+                        ctx.moveTo(enemy.x - this.enemyScale / 2, enemy.y + this.enemyScale / 2);
+                        ctx.lineTo(enemy.x, enemy.y - this.enemyScale / 2);
+                        ctx.lineTo(enemy.x + this.enemyScale / 2, enemy.y + this.enemyScale / 2);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
+
+                // Draw scores
+                ctx.font = '24px Arial';
+                for (let i = 0; i < this.numPlayers; i++) {
+                    ctx.fillStyle = COLORS[6];
+                    ctx.fillText(`P${i + 1}: ${this.scores[i]}`, i * this.playerWidth + 10, 30);
+                }
+                
+                // Draw time
+                ctx.fillStyle = COLORS[6];
+                const timeText = `Time: ${Math.floor(this.timeLeft)}`;
+                const timeWidth = ctx.measureText(timeText).width;
+                ctx.fillText(timeText, WIDTH / 2 - timeWidth / 2, 30);
+
+                // Draw warning message
+                if (this.warningTimer > 0) {
+                    const warningText = 'SLOW DOWN!';
+                    const cheatingText = 'CHEATING NOT ALLOWED!';
+                    
+                    // Background
+                    ctx.font = '32px Arial';
+                    const bgWidth = ctx.measureText(cheatingText).width + 20;
+                    const bgHeight = 80;
+                    const bgX = WIDTH / 2 - bgWidth / 2;
+                    const bgY = HEIGHT / 2 - bgHeight / 2;
+                    
+                    ctx.fillStyle = COLORS[1];
+                    ctx.fillRect(bgX, bgY, bgWidth, bgHeight);
+                    
+                    // Flashing text
+                    const flash = Math.floor(this.frameCount / 5) % 2 === 0;
+                    ctx.fillStyle = flash ? COLORS[14] : COLORS[8];
+                    
+                    const warningWidth = ctx.measureText(warningText).width;
+                    const cheatingWidth = ctx.measureText(cheatingText).width;
+                    
+                    ctx.fillText(warningText, WIDTH / 2 - warningWidth / 2, HEIGHT / 2 - 10);
+                    ctx.fillText(cheatingText, WIDTH / 2 - cheatingWidth / 2, HEIGHT / 2 + 30);
+                    
+                    this.warningTimer--;
+                }
+
+                // Game over screen
+                if (this.gameOver) {
+                    // Determine winner(s)
+                    const maxScore = Math.max(...this.scores);
+                    const winners = this.scores.map((s, i) => s === maxScore ? i : -1).filter(i => i !== -1);
+                    
+                    // Game over text
+                    ctx.font = '32px Arial';
+                    ctx.fillStyle = COLORS[8];
+                    const gameOverText = 'GAME OVER';
+                    const gameOverWidth = ctx.measureText(gameOverText).width;
+                    ctx.fillText(gameOverText, WIDTH / 2 - gameOverWidth / 2, HEIGHT / 4);
+                    
+                    // Winner text
+                    ctx.font = '24px Arial';
+                    ctx.fillStyle = COLORS[11];
+                    const winnerText = winners.length === 1 
+                        ? `Player ${winners[0] + 1} Wins!` 
+                        : "It's a Tie!";
+                    const winnerWidth = ctx.measureText(winnerText).width;
+                    ctx.fillText(winnerText, WIDTH / 2 - winnerWidth / 2, HEIGHT / 4 + 40);
+                    
+                    // Restart instruction (flashing)
+                    if (Math.floor(this.frameCount / 15) % 2 === 0) {
+                        ctx.fillStyle = COLORS[8];
+                        const restartText = 'Press lowest key to restart';
+                        const restartWidth = ctx.measureText(restartText).width;
+                        ctx.fillText(restartText, WIDTH / 2 - restartWidth / 2, HEIGHT / 2);
+                    }
+                }
+            }
+
+            isOnScreen(obj) {
+                return obj.x >= 0 && obj.x < WIDTH && obj.y >= 0 && obj.y < HEIGHT;
+            }
+        }
+
+        // Initialize game
+        const game = new PianoShooterGame();
+        let midiAccess = null;
+
+        // MIDI Setup
+        async function setupMIDI() {
+            try {
+                midiAccess = await navigator.requestMIDIAccess();
+                console.log('MIDI Access granted');
+                
+                const inputs = Array.from(midiAccess.inputs.values());
+                console.log(`Found ${inputs.length} MIDI input(s)`);
+                
+                if (inputs.length === 0) {
+                    document.getElementById('midiStatus').textContent = 'No MIDI Device Connected';
+                    document.getElementById('midiStatus').className = 'disconnected';
+                    return;
+                }
+
+                inputs.forEach((input, index) => {
+                    console.log(`MIDI Input ${index}: ${input.name}`);
+                    input.onmidimessage = handleMIDIMessage;
+                });
+
+                document.getElementById('midiStatus').textContent = `MIDI Connected: ${inputs[0].name}`;
+                document.getElementById('midiStatus').className = 'connected';
+                document.getElementById('deviceInfo').textContent = `Using ${inputs.length} MIDI input device(s)`;
+            } catch (err) {
+                console.error('MIDI Access failed:', err);
+                document.getElementById('midiStatus').textContent = 'MIDI Access Denied or Not Supported';
+                document.getElementById('midiStatus').className = 'disconnected';
+            }
+        }
+
+        function handleMIDIMessage(event) {
+            const [status, note, velocity] = event.data;
+
+            // Note on (status 144 with velocity > 0)
+            if (status === 144 && velocity > 0) {
+                game.handleMIDIMessage(note, velocity);
+            }
+        }
+
+        // Game loop
+        function gameLoop() {
+            game.update();
+            game.draw();
+        }
+
+        // Initialize
+        setupMIDI();
+        setInterval(gameLoop, 1000 / FPS);
+    </script>
+</body>
+</html>

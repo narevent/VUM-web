@@ -16,6 +16,7 @@ urlpatterns += [
 urlpatterns += i18n_patterns(
     path('', include('company.urls')),
     path('', include('events.urls')),
+    path('playground/', include('playground.urls')),
 )
 
 if settings.DEBUG:

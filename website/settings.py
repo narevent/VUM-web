@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'events',
     'games',
     'sections',
+    'playground',
 ]
 
 MIDDLEWARE = [
