@@ -8,3 +8,4 @@ django-extensions==4.1
 django-sslserver==0.22
 django-parler==2.3
 googletrans==4.0.2
+gunicorn==21.2.0

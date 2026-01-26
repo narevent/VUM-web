@@ -1,176 +1,278 @@
-# VUM Games Website
+# VumGames Website
 
-A Django-based web platform for managing and showcasing gaming events and content.
+Django-based website for VumGames, deployed on Debian 13 VPS with HTTPS.
 
-## Project Structure
-
-```
-VUM-web/
-├── company/          # Company information and management
-├── core/             # Core application functionality
-├── docker/           # Docker configuration files
-├── events/           # Event management system
-├── games/            # Games catalog and management
-├── scripts/          # Utility scripts
-├── sections/         # Website sections/pages
-├── static/           # Static files (CSS, JS, images)
-├── templates/        # HTML templates
-├── website/          # Main website configuration
-├── manage.py         # Django management script
-├── requirements.txt  # Python dependencies
-└── docker-compose.yaml  # Docker Compose configuration
-```
-
-## Technologies Used
-
-- **Backend**: Python/Django
-- **Containerization**: Docker & Docker Compose
-- **Frontend**: HTML templates with static assets
-
-## Prerequisites
-
-- Python 3.x
-- Docker and Docker Compose (for containerized deployment)
-- pip (Python package manager)
-
-## Installation
+## 🚀 Quick Start
 
 ### Local Development
 
-1. Clone the repository:
-```bash
-git clone https://github.com/narevent/VUM-web.git
-cd VUM-web
-```
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/narevent/VUM-web.git
+   cd VUM-web
+   ```
 
-2. Create a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
+2. **Create virtual environment**
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+3. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-4. Set up environment variables:
-```bash
-cp .env.production.example .env
-# Edit .env with your configuration
-```
+4. **Create .env file**
+   ```bash
+   cp .env.example .env
+   # Edit .env and set DEBUG=True for local development
+   ```
 
-5. Run migrations:
-```bash
-python manage.py migrate
-```
+5. **Run migrations**
+   ```bash
+   python manage.py migrate
+   ```
 
-6. Create a superuser:
-```bash
-python manage.py createsuperuser
-```
+6. **Create superuser**
+   ```bash
+   python manage.py createsuperuser
+   ```
 
-7. Run the development server:
-```bash
-python manage.py runserver
-```
+7. **Run development server**
+   ```bash
+   python manage.py runserver
+   ```
 
-The application will be available at `http://localhost:8000`
+   Visit: http://localhost:8000
 
-### Docker Deployment
+## 🌐 Production Deployment
 
-1. Clone the repository:
-```bash
-git clone https://github.com/narevent/VUM-web.git
-cd VUM-web
-```
+### Prerequisites
+- Debian 13 VPS
+- Domain: vumgames.com
+- SSH access to VPS
+- GitHub repository
 
-2. Set up environment variables:
-```bash
-cp .env.production.example .env
-# Edit .env with your production configuration
-```
-
-3. Build and run with Docker Compose:
-```bash
-docker-compose up -d
-```
-
-4. Run migrations inside the container:
-```bash
-docker-compose exec web python manage.py migrate
-```
-
-5. Create a superuser:
-```bash
-docker-compose exec web python manage.py createsuperuser
-```
-
-## Features
-
-- **Events Management**: Create and manage gaming events
-- **Games Catalog**: Maintain a database of games
-- **Company Information**: Display company details and information
-- **Sections System**: Modular website sections for flexible content management
-- **Admin Interface**: Django admin panel for content management
-
-## Configuration
-
-The project uses environment variables for configuration. Copy `.env.production.example` to `.env` and configure the following:
-
-- Database settings
-- Secret key
-- Debug mode
-- Allowed hosts
-- Static files configuration
-- Other Django settings
-
-## Development
-
-### Running Migrations
+### Step 1: Initial VPS Setup
 
 ```bash
-python manage.py makemigrations
-python manage.py migrate
+# On VPS
+git clone https://github.com/narevent/VUM-web.git /tmp/setup
+cd /tmp/setup
+bash scripts/init_vps.sh
 ```
 
-### Collecting Static Files
+### Step 2: Deploy Application
 
 ```bash
-python manage.py collectstatic
+bash scripts/deploy.sh
 ```
 
-### Running Tests
+Follow the prompts to:
+- Confirm GitHub repository URL
+- Create Django superuser (optional)
+- Setup SSL certificate with Let's Encrypt
+
+### Step 3: Configure Settings
+
+Edit `/var/www/vumgames/.env` and configure:
+- Email settings (if using email features)
+- Stripe/PayPal credentials (if using payments)
+- Any other sensitive settings
+
+### Step 4: Restart Services
 
 ```bash
-python manage.py test
+sudo systemctl restart gunicorn
+sudo systemctl reload nginx
 ```
 
-## Project Modules
+## 🔄 Updating the Site
 
-- **company**: Manages company-related information
-- **events**: Handles event creation, management, and display
-- **games**: Manages game catalog and related functionality
-- **sections**: Provides modular content sections for the website
-- **core**: Contains core application logic and utilities
+When you push changes to GitHub:
 
-## Contributing
+```bash
+# On VPS
+cd /var/www/vumgames
+bash scripts/update.sh
+```
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+## 🛠️ Management Scripts
 
-## License
+All scripts are in the `scripts/` directory:
 
-This project is maintained by narevent. Please check the repository for license information.
+- **init_vps.sh** - Initialize a fresh VPS
+- **deploy.sh** - Initial deployment
+- **update.sh** - Pull changes and update site
+- **backup.sh** - Create backups of database and media
+- **restore.sh** - Restore from backup
+- **logs.sh** - View application logs
 
-## Contact
+### Running Scripts
 
-For questions or support, please open an issue on the GitHub repository.
+```bash
+# Make scripts executable (first time only)
+chmod +x scripts/*.sh
 
-## Acknowledgments
+# Run any script
+bash scripts/SCRIPT_NAME.sh
+```
 
-- Built with Django
-- Containerized with Docker
+## 📦 Backups
+
+### Create Backup
+
+```bash
+bash scripts/backup.sh
+```
+
+Backups are stored in `/var/backups/vumgames/`
+
+### Restore from Backup
+
+```bash
+bash scripts/restore.sh
+```
+
+## 📊 Monitoring & Logs
+
+### View Logs
+
+```bash
+bash scripts/logs.sh
+```
+
+Or manually:
+
+```bash
+# Gunicorn service logs
+sudo journalctl -u gunicorn -f
+
+# Application logs
+sudo tail -f /var/www/vumgames/logs/gunicorn-error.log
+sudo tail -f /var/www/vumgames/logs/gunicorn-access.log
+
+# Nginx logs
+sudo tail -f /var/log/nginx/error.log
+sudo tail -f /var/log/nginx/access.log
+```
+
+### Check Service Status
+
+```bash
+sudo systemctl status gunicorn
+sudo systemctl status nginx
+```
+
+### Restart Services
+
+```bash
+sudo systemctl restart gunicorn
+sudo systemctl reload nginx
+```
+
+## 🌍 Languages
+
+The site supports:
+- Croatian (hr) - Default
+- English (en)
+
+### Managing Translations
+
+```bash
+# Create/update translation files
+python manage.py makemessages -l hr
+python manage.py makemessages -l en
+
+# Compile translations
+python manage.py compilemessages
+```
+
+## 🗂️ Project Structure
+
+```
+vumgames/
+├── company/           # Company app
+├── events/            # Events app
+├── games/             # Games app
+├── sections/          # Sections app
+├── core/              # Core utilities and middleware
+├── website/           # Main project settings
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+├── templates/         # HTML templates
+├── static/            # Static files (CSS, JS, images)
+├── media/             # User-uploaded files
+├── locale/            # Translation files
+├── db/                # SQLite database
+├── scripts/           # Deployment scripts
+├── manage.py
+├── requirements.txt
+└── .env              # Environment variables (not in git)
+```
+
+## 🔒 Security
+
+- HTTPS enforced via Let's Encrypt
+- Secrets stored in `.env` (never commit to git)
+- CSRF protection enabled
+- Secure cookies in production
+- XSS protection headers
+- Auto-renewal of SSL certificates
+
+## 📱 Admin Panel
+
+Access at: https://vumgames.com/admin/
+
+## 🐛 Troubleshooting
+
+### Site shows 502 Bad Gateway
+
+```bash
+# Check Gunicorn status
+sudo systemctl status gunicorn
+
+# Check logs
+sudo journalctl -u gunicorn -n 50
+
+# Restart Gunicorn
+sudo systemctl restart gunicorn
+```
+
+### Static files not loading
+
+```bash
+cd /var/www/vumgames
+sudo -u www-data venv/bin/python manage.py collectstatic --noinput
+sudo systemctl reload nginx
+```
+
+### Database errors
+
+```bash
+cd /var/www/vumgames
+sudo -u www-data venv/bin/python manage.py migrate
+sudo systemctl restart gunicorn
+```
+
+### SSL certificate issues
+
+```bash
+# Check certificate status
+sudo certbot certificates
+
+# Renew certificate
+sudo certbot renew
+
+# Test renewal
+sudo certbot renew --dry-run
+```
+
+## 📞 Support
+
+For issues, check:
+1. Application logs: `bash scripts/logs.sh`
+2. Service status: `sudo systemctl status gunicorn nginx`
+3. Nginx config: `sudo nginx -t`
