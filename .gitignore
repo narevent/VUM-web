@@ -55,3 +55,7 @@ Thumbs.db
 
 # Local development
 *.sqlite3
+
+# Files
+*.zip
+*.gz
