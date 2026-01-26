@@ -7,7 +7,7 @@ echo "================================"
 
 # Configuration
 PROJECT_DIR="/var/www/vumgames"
-REPO_URL="https://github.com/YOUR_USERNAME/YOUR_REPO.git"
+REPO_URL="https://github.com/narevent/VUM-web.git"
 
 # Prompt for repository URL
 echo "Enter your GitHub repository URL"

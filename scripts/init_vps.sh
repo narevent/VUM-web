@@ -31,21 +31,10 @@ echo "Configuring firewall..."
 sudo ufw allow OpenSSH
 sudo ufw allow 'Nginx Full'
 sudo ufw --force enable
+sudo ufw logging off
 
 echo "Firewall status:"
 sudo ufw status
-
-# Create project directory
-echo "Creating project directory..."
-sudo mkdir -p /var/www/vumgames
-sudo mkdir -p /var/www/vumgames/logs
-sudo mkdir -p /var/www/vumgames/db
-sudo mkdir -p /var/www/vumgames/media
-
-# Set permissions
-echo "Setting permissions..."
-sudo chown -R www-data:www-data /var/www/vumgames
-sudo chmod -R 755 /var/www/vumgames
 
 # Create GitHub deploy key (optional but recommended)
 echo ""
