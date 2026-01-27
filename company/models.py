@@ -73,6 +73,7 @@ class Employee(models.Model):
         
         super().save(*args, **kwargs)
 
+
 class FAQ(TranslatableModel):
     translations = TranslatedFields(
         question=models.CharField(max_length=64),
@@ -85,4 +86,18 @@ class FAQ(TranslatableModel):
 
     def __str__(self):
         return self.safe_translation_getter("question", any_language=True)
-    
+
+
+class Newsletter(models.Model):
+    email = models.EmailField(unique=True)
+    name = models.CharField(max_length=100, blank=True)
+    subscribed_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "Newsletter Subscription"
+        verbose_name_plural = "Newsletter Subscriptions"
+        ordering = ['-subscribed_at']
+
+    def __str__(self):
+        return self.email

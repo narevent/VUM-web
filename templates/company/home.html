@@ -173,6 +173,54 @@
     </div>
 </section>
 
+
+<!-- Newsletter Section -->
+<section class="py-5" style="padding: 100px 0 !important;">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div style="background: linear-gradient(135deg, rgba(0, 102, 255, 0.1) 0%, rgba(0, 217, 255, 0.1) 100%); border: 2px solid var(--border-color); border-radius: 24px; padding: 4rem 2rem; text-align: center; position: relative; overflow: hidden;">
+                    <!-- Decorative elements -->
+                    <div style="position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; border-radius: 50%; background: rgba(0, 102, 255, 0.1); filter: blur(60px);"></div>
+                    <div style="position: absolute; bottom: -50px; left: -50px; width: 200px; height: 200px; border-radius: 50%; background: rgba(0, 217, 255, 0.1); filter: blur(60px);"></div>
+                    
+                    <div style="position: relative; z-index: 1; max-width: 600px; margin: 0 auto;">
+                        <div style="margin-bottom: 1.5rem;">
+                            <i class="fas fa-envelope-open-text" style="font-size: 3rem; color: var(--primary-color); opacity: 0.8;"></i>
+                        </div>
+                        <h2 class="section-title" style="margin-bottom: 1rem;">Stay in the Loop</h2>
+                        <p class="section-subtitle" style="margin-bottom: 2rem; max-width: 500px; margin-left: auto; margin-right: auto;">
+                            Subscribe to our newsletter and be the first to know about new gaming sessions, special events, and exclusive updates.
+                        </p>
+                        
+                        <!-- Newsletter Form -->
+                        <form id="newsletter-form" method="post" style="max-width: 500px; margin: 0 auto;">
+                            {% csrf_token %}
+                            <div id="newsletter-message" style="margin-bottom: 1rem; display: none;"></div>
+                            
+                            <div class="mb-3">
+                                <input type="text" name="name" class="form-control" placeholder="Your name (optional)" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-primary); padding: 0.875rem 1.25rem; border-radius: 12px;">
+                            </div>
+                            
+                            <div class="input-group input-group-lg" style="margin-bottom: 1rem;">
+                                <input type="email" name="email" class="form-control" placeholder="Enter your email" required style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-primary); padding: 0.875rem 1.25rem; border-radius: 12px 0 0 12px;">
+                                <button type="submit" class="btn btn-primary" style="padding: 0 2rem; border-radius: 0 12px 12px 0;">
+                                    <span id="subscribe-btn-text">Subscribe</span>
+                                    <i id="subscribe-spinner" class="fas fa-spinner fa-spin" style="display: none;"></i>
+                                </button>
+                            </div>
+                            
+                            <small style="color: var(--text-secondary); display: block;">
+                                We respect your privacy. Unsubscribe at any time.
+                            </small>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- Instruments Section -->
 <section class="py-5" style="padding: 100px 0 !important;">
     <div class="container">
@@ -287,4 +335,64 @@
         </div>
     </div>
 </section>
+
+<script>
+// Newsletter form submission with AJAX
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('newsletter-form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const btnText = document.getElementById('subscribe-btn-text');
+            const spinner = document.getElementById('subscribe-spinner');
+            const messageDiv = document.getElementById('newsletter-message');
+            const formData = new FormData(form);
+            
+            // Disable button and show spinner
+            submitBtn.disabled = true;
+            btnText.style.display = 'none';
+            spinner.style.display = 'inline-block';
+            messageDiv.style.display = 'none';
+            
+            // Post to same page - the view will handle it
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    messageDiv.className = 'alert alert-success';
+                    messageDiv.textContent = data.message || 'Thank you for subscribing!';
+                    messageDiv.style.display = 'block';
+                    form.reset();
+                } else {
+                    messageDiv.className = 'alert alert-danger';
+                    const errors = data.errors || {};
+                    const errorMessages = Object.values(errors).flat();
+                    messageDiv.textContent = errorMessages.join(', ') || 'Please enter a valid email address.';
+                    messageDiv.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                messageDiv.className = 'alert alert-danger';
+                messageDiv.textContent = 'An error occurred. Please try again.';
+                messageDiv.style.display = 'block';
+            })
+            .finally(() => {
+                // Re-enable button and hide spinner
+                submitBtn.disabled = false;
+                btnText.style.display = 'inline';
+                spinner.style.display = 'none';
+            });
+        });
+    }
+});
+</script>
 {% endblock %}
