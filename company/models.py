@@ -25,11 +25,7 @@ class CompanyInfo(TranslatableModel):
 
 class ContactInfo(models.Model):
     name = models.CharField(max_length=64)
-    address = models.CharField(max_length=64)
-    postal_code = models.CharField(max_length=6)
-    city = models.CharField(max_length=64)
     email = models.EmailField()
-    phone = models.CharField(max_length=10, blank=True, null=True)
 
     class Meta:
         verbose_name = "Contact Information"

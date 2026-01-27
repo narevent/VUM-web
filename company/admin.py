@@ -47,9 +47,9 @@ class CompanyInfoAdmin(TranslatableAdmin):
 
 @admin.register(ContactInfo)
 class ContactInfoAdmin(admin.ModelAdmin):
-    list_display = ['name', 'address', 'postal_code', 'city', 'email', 'phone']
+    list_display = ['name', 'email']
     list_filter = ['name']
-    search_fields = ['name', 'address', 'email']
+    search_fields = ['name', 'email']
     readonly_fields = []
 
 

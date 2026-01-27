@@ -202,31 +202,6 @@
                     
                     <div class="contact-info-item">
                         <div class="contact-icon">
-                            <i class="fas fa-map-marker-alt"></i>
-                        </div>
-                        <div>
-                            <h6 style="color: var(--text-primary); font-weight: 700; margin-bottom: 0.5rem;">Address</h6>
-                            <p style="color: var(--text-secondary); margin: 0; font-size: 0.95rem;">{{ contact_info.address }}</p>
-                            <p style="color: var(--text-secondary); margin: 0; font-size: 0.95rem;">{{ contact_info.postal_code }}, {{ contact_info.city }}</p>
-                        </div>
-                    </div>
-                    
-                    {% if contact_info.phone %}
-                    <div class="contact-info-item">
-                        <div class="contact-icon">
-                            <i class="fas fa-phone"></i>
-                        </div>
-                        <div>
-                            <h6 style="color: var(--text-primary); font-weight: 700; margin-bottom: 0.5rem;">Phone</h6>
-                            <p style="margin: 0;">
-                                <a href="tel:{{ contact_info.phone }}" style="color: var(--text-secondary); text-decoration: none; transition: color 0.3s ease;" onmouseover="this.style.color='var(--primary-color)'" onmouseout="this.style.color='var(--text-secondary)'">{{ contact_info.phone }}</a>
-                            </p>
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    <div class="contact-info-item">
-                        <div class="contact-icon">
                             <i class="fas fa-envelope"></i>
                         </div>
                         <div>

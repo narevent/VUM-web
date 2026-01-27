@@ -8,22 +8,6 @@
     {% endif %}
     
     <div class="contact-item mb-3 d-flex align-items-center">
-        <i class="fas fa-map-marker-alt me-2" style="color: var(--primary-color);"></i>
-        <span style="color: var(--text-secondary);">
-            {{ contact_info.address }}, {{ contact_info.postal_code }}, {{ contact_info.city }}
-        </span>
-    </div>
-    
-    {% if contact_info.phone %}
-    <div class="contact-item mb-3 d-flex align-items-center">
-        <i class="fas fa-phone me-2" style="color: var(--primary-color);"></i>
-        <a href="tel:{{ contact_info.phone }}" style="color: var(--text-secondary); text-decoration: none; transition: color 0.3s ease;" onmouseover="this.style.color='var(--primary-color)'" onmouseout="this.style.color='var(--text-secondary)'">
-            {{ contact_info.phone }}
-        </a>
-    </div>
-    {% endif %}
-    
-    <div class="contact-item mb-3 d-flex align-items-center">
         <i class="fas fa-envelope me-2" style="color: var(--primary-color);"></i>
         <a href="mailto:{{ contact_info.email }}" style="color: var(--text-secondary); text-decoration: none; transition: color 0.3s ease;" onmouseover="this.style.color='var(--primary-color)'" onmouseout="this.style.color='var(--text-secondary)'">
             {{ contact_info.email }}
