@@ -350,21 +350,32 @@ document.addEventListener('DOMContentLoaded', function() {
             const messageDiv = document.getElementById('newsletter-message');
             const formData = new FormData(form);
             
+            // Get CSRF token
+            const csrfToken = form.querySelector('[name=csrfmiddlewaretoken]').value;
+            
             // Disable button and show spinner
             submitBtn.disabled = true;
             btnText.style.display = 'none';
             spinner.style.display = 'inline-block';
             messageDiv.style.display = 'none';
             
-            // Post to same page - the view will handle it
+            // Post to same page
             fetch(window.location.href, {
                 method: 'POST',
                 body: formData,
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Server returned HTML instead of JSON. Check Django view.');
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     messageDiv.className = 'alert alert-success';
@@ -382,7 +393,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error('Error:', error);
                 messageDiv.className = 'alert alert-danger';
-                messageDiv.textContent = 'An error occurred. Please try again.';
+                messageDiv.textContent = 'An error occurred. Please try again. Check browser console for details.';
                 messageDiv.style.display = 'block';
             })
             .finally(() => {
