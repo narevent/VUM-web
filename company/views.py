@@ -9,27 +9,38 @@ from sections.models import Header, Banner, Stat, Story, Principle
 from games.models import GameTitle, Instrument
 from events.models import GameSession
 from .forms import ContactForm, NewsletterForm
+import threading
+
+def send_email_async(subject, message, from_email, recipient_list):
+    """Send email in a separate thread to avoid blocking the response"""
+    def send():
+        try:
+            send_mail(
+                subject,
+                message,
+                from_email,
+                recipient_list,
+                fail_silently=True,
+            )
+            print(f"✓ Confirmation email sent to {recipient_list}")
+        except Exception as e:
+            print(f"✗ Email not sent (this is OK if email not configured): {e}")
+    
+    thread = threading.Thread(target=send)
+    thread.daemon = True
+    thread.start()
 
 def home(request):
     """Homepage with featured content and newsletter subscription"""
-    
-    # Debug: Print request details
-    print(f"Request method: {request.method}")
-    print(f"Is AJAX: {request.headers.get('X-Requested-With')}")
-    print(f"POST data: {request.POST}")
     
     # Handle newsletter subscription via AJAX
     if request.method == 'POST':
         # Check if it's an AJAX request
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         
-        print(f"Is AJAX request: {is_ajax}")
-        
         if is_ajax:
             email = request.POST.get('email', '').strip()
             name = request.POST.get('name', '').strip()
-            
-            print(f"Email: {email}, Name: {name}")
             
             if not email:
                 return JsonResponse({
@@ -51,31 +62,28 @@ def home(request):
                     name=name
                 )
                 
-                print(f"Newsletter subscription created: {subscription}")
+                print(f"✓ Newsletter subscription created: {subscription.email}")
                 
-                # Send confirmation email
-                try:
-                    send_mail(
-                        'Welcome to VUM Games Newsletter!',
-                        f'Hi {name or "there"}!\n\n'
-                        f'Thank you for subscribing to our newsletter. '
-                        f'You\'ll now receive updates about new gaming sessions, events, and more!\n\n'
-                        f'Stay tuned!\n'
-                        f'The VUM Games Team',
-                        settings.DEFAULT_FROM_EMAIL,
-                        [email],
-                        fail_silently=True,
-                    )
-                    print("Confirmation email sent successfully")
-                except Exception as e:
-                    print(f"Error sending confirmation email: {e}")
+                # Send confirmation email ASYNCHRONOUSLY (non-blocking)
+                # This won't delay the response even if email fails
+                send_email_async(
+                    'Welcome to VUM Games Newsletter!',
+                    f'Hi {name or "there"}!\n\n'
+                    f'Thank you for subscribing to our newsletter. '
+                    f'You\'ll now receive updates about new gaming sessions, events, and more!\n\n'
+                    f'Stay tuned!\n'
+                    f'The VUM Games Team',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [email]
+                )
                 
+                # Return success immediately without waiting for email
                 return JsonResponse({
                     'success': True,
-                    'message': 'Thank you for subscribing! Check your email for confirmation.'
+                    'message': 'Thank you for subscribing!'
                 })
             except Exception as e:
-                print(f"Error creating subscription: {e}")
+                print(f"✗ Error creating subscription: {e}")
                 return JsonResponse({
                     'success': False,
                     'errors': {'email': [str(e)]}
