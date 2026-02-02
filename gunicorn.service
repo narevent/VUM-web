@@ -5,6 +5,7 @@ After=network.target
 [Service]
 User=www-data
 Group=www-data
+UMask=0007
 WorkingDirectory=/var/www/vumgames
 Environment="PATH=/var/www/vumgames/venv/bin"
 EnvironmentFile=/var/www/vumgames/.env
