@@ -7,6 +7,7 @@ echo "================================"
 
 PROJECT_DIR="/var/www/vumgames"
 BACKUP_DIR="/var/backups/vumgames"
+SERVICE_NAME="gunicorn-vumgames"
 
 # List available backups
 echo "Available backups:"
@@ -33,7 +34,7 @@ fi
 
 # Stop Gunicorn
 echo "Stopping Gunicorn..."
-sudo systemctl stop gunicorn
+sudo systemctl stop $SERVICE_NAME
 
 # Extract backup
 echo "Restoring from backup..."
@@ -46,7 +47,7 @@ sudo chown -R www-data:www-data $PROJECT_DIR/media
 
 # Start Gunicorn
 echo "Starting Gunicorn..."
-sudo systemctl start gunicorn
+sudo systemctl start $SERVICE_NAME
 
 echo ""
 echo "================================"

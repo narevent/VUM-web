@@ -5,6 +5,11 @@ echo "VumGames System Status"
 echo "================================"
 echo ""
 
+SERVICE_NAME="gunicorn-vumgames"
+PROJECT_DIR="/var/www/vumgames"
+BACKUP_DIR="/var/backups/vumgames"
+SITE_URL="https://vumgames.com"
+
 # System Info
 echo "📊 System Information:"
 echo "  Hostname: $(hostname)"
@@ -16,7 +21,7 @@ echo ""
 # Disk Usage
 echo "💾 Disk Usage:"
 df -h / | tail -1 | awk '{printf "  Root: %s / %s (%s used)\n", $3, $2, $5}'
-df -h /var/www/vumgames 2>/dev/null | tail -1 | awk '{printf "  Project: %s / %s (%s used)\n", $3, $2, $5}' || echo "  Project: N/A"
+df -h $PROJECT_DIR 2>/dev/null | tail -1 | awk '{printf "  Project: %s / %s (%s used)\n", $3, $2, $5}' || echo "  Project: N/A"
 echo ""
 
 # Memory Usage
@@ -26,10 +31,10 @@ echo ""
 
 # Service Status
 echo "🔧 Services:"
-if systemctl is-active --quiet gunicorn; then
-    echo "  ✅ Gunicorn: Running"
+if systemctl is-active --quiet $SERVICE_NAME; then
+    echo "  ✅ Gunicorn (vumgames): Running"
 else
-    echo "  ❌ Gunicorn: Not running"
+    echo "  ❌ Gunicorn (vumgames): Not running"
 fi
 
 if systemctl is-active --quiet nginx; then
@@ -58,10 +63,10 @@ echo ""
 
 # Recent Errors
 echo "⚠️  Recent Errors (last 10):"
-error_count=$(sudo journalctl -u gunicorn --since "1 hour ago" -p err --no-pager | wc -l)
+error_count=$(sudo journalctl -u $SERVICE_NAME --since "1 hour ago" -p err --no-pager | wc -l)
 if [ "$error_count" -gt 0 ]; then
     echo "  Found $error_count error(s) in last hour"
-    sudo journalctl -u gunicorn --since "1 hour ago" -p err --no-pager | tail -5
+    sudo journalctl -u $SERVICE_NAME --since "1 hour ago" -p err --no-pager | tail -5
 else
     echo "  No errors in last hour ✅"
 fi
@@ -69,8 +74,8 @@ echo ""
 
 # Database
 echo "🗄️  Database:"
-if [ -f "/var/www/vumgames/db/db.sqlite3" ]; then
-    db_size=$(du -h /var/www/vumgames/db/db.sqlite3 | awk '{print $1}')
+if [ -f "$PROJECT_DIR/db/db.sqlite3" ]; then
+    db_size=$(du -h $PROJECT_DIR/db/db.sqlite3 | awk '{print $1}')
     echo "  Size: $db_size"
 else
     echo "  ⚠️  Database not found"
@@ -79,8 +84,8 @@ echo ""
 
 # Last Backup
 echo "💾 Last Backup:"
-if [ -d "/var/backups/vumgames" ]; then
-    last_backup=$(ls -t /var/backups/vumgames/full_backup_*.tar.gz 2>/dev/null | head -1)
+if [ -d "$BACKUP_DIR" ]; then
+    last_backup=$(ls -t $BACKUP_DIR/full_backup_*.tar.gz 2>/dev/null | head -1)
     if [ ! -z "$last_backup" ]; then
         backup_date=$(stat -c %y "$last_backup" | cut -d'.' -f1)
         backup_size=$(du -h "$last_backup" | awk '{print $1}')
@@ -96,7 +101,7 @@ echo ""
 
 # Website Check
 echo "🌐 Website Status:"
-response=$(curl -s -o /dev/null -w "%{http_code}" https://vumgames.com 2>/dev/null)
+response=$(curl -s -o /dev/null -w "%{http_code}" $SITE_URL 2>/dev/null)
 if [ "$response" = "200" ]; then
     echo "  ✅ Site is accessible (HTTP $response)"
 else
@@ -107,8 +112,8 @@ echo ""
 echo "================================"
 echo "Quick Commands:"
 echo "================================"
-echo "  Restart services: sudo systemctl restart gunicorn nginx"
-echo "  View logs: bash scripts/logs.sh"
-echo "  Update site: bash scripts/update.sh"
-echo "  Create backup: bash scripts/backup.sh"
+echo "  Restart service: sudo systemctl restart $SERVICE_NAME nginx"
+echo "  View logs: bash scripts/logs-vumgames.sh"
+echo "  Update site: bash scripts/update-vumgames.sh"
+echo "  Create backup: bash scripts/backup-vumgames.sh"
 echo ""

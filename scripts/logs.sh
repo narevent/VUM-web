@@ -14,10 +14,12 @@ echo "6) All logs (tail -f)"
 echo ""
 read -p "Enter choice [1-6]: " choice
 
+SERVICE_NAME="gunicorn-vumgames"
+
 case $choice in
     1)
         echo "Viewing Gunicorn service logs (Ctrl+C to exit)..."
-        sudo journalctl -u gunicorn -f
+        sudo journalctl -u $SERVICE_NAME -f
         ;;
     2)
         echo "Viewing Gunicorn access logs (Ctrl+C to exit)..."
