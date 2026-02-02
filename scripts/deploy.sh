@@ -8,6 +8,7 @@ echo "================================"
 # Configuration
 PROJECT_DIR="/var/www/vumgames"
 REPO_URL="https://github.com/narevent/VUM-web.git"
+SERVICE_NAME="gunicorn-vumgames"
 
 # Prompt for repository URL
 echo "Enter your GitHub repository URL"
@@ -100,16 +101,15 @@ fi
 
 # Setup Gunicorn service
 echo "Setting up Gunicorn service..."
-sudo cp $PROJECT_DIR/gunicorn.service /etc/systemd/system/gunicorn.service
+sudo cp $PROJECT_DIR/gunicorn.service /etc/systemd/system/${SERVICE_NAME}.service
 sudo systemctl daemon-reload
-sudo systemctl enable gunicorn
-sudo systemctl restart gunicorn
+sudo systemctl enable ${SERVICE_NAME}
+sudo systemctl restart ${SERVICE_NAME}
 
 # Setup Nginx
 echo "Setting up Nginx..."
 sudo cp $PROJECT_DIR/nginx.conf /etc/nginx/sites-available/vumgames
 sudo ln -sf /etc/nginx/sites-available/vumgames /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
 
 # Test Nginx configuration
 echo "Testing Nginx configuration..."
@@ -157,7 +157,7 @@ echo "Deployment Complete!"
 echo "================================"
 echo ""
 echo "Service status:"
-sudo systemctl status gunicorn --no-pager | head -5
+sudo systemctl status ${SERVICE_NAME} --no-pager | head -5
 echo ""
 echo "Your site should now be accessible at:"
 if [ "$setup_ssl" = "y" ]; then
@@ -169,9 +169,9 @@ else
 fi
 echo ""
 echo "Useful commands:"
-echo "  View Gunicorn logs: sudo journalctl -u gunicorn -f"
+echo "  View Gunicorn logs: sudo journalctl -u ${SERVICE_NAME} -f"
 echo "  View Nginx logs: sudo tail -f /var/log/nginx/error.log"
-echo "  Restart services: sudo systemctl restart gunicorn nginx"
+echo "  Restart services: sudo systemctl restart ${SERVICE_NAME} nginx"
 echo "  Update site: bash scripts/update.sh"
 echo ""
 echo "Don't forget to:"

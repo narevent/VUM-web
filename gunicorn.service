@@ -15,7 +15,7 @@ ExecStart=/var/www/vumgames/venv/bin/gunicorn \
     --timeout 60 \
     --access-logfile /var/www/vumgames/logs/gunicorn-access.log \
     --error-logfile /var/www/vumgames/logs/gunicorn-error.log \
-    website.wsgi:application
+    vumgames.wsgi:application
 
 [Install]
 WantedBy=multi-user.target

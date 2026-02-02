@@ -6,6 +6,7 @@ echo "VumGames Update Script"
 echo "================================"
 
 PROJECT_DIR="/var/www/vumgames"
+SERVICE_NAME="gunicorn-vumgames"
 
 # Change to project directory
 cd $PROJECT_DIR
@@ -30,7 +31,7 @@ echo "Collecting static files..."
 sudo -u www-data $PROJECT_DIR/venv/bin/python manage.py collectstatic --noinput
 
 echo "Restarting Gunicorn..."
-sudo systemctl restart gunicorn
+sudo systemctl restart ${SERVICE_NAME}
 
 echo "Reloading Nginx..."
 sudo systemctl reload nginx
@@ -41,10 +42,10 @@ echo "Update Complete!"
 echo "================================"
 echo ""
 echo "Service status:"
-sudo systemctl status gunicorn --no-pager | head -5
+sudo systemctl status ${SERVICE_NAME} --no-pager | head -5
 echo ""
 echo "Recent logs (last 20 lines):"
-sudo journalctl -u gunicorn -n 20 --no-pager
+sudo journalctl -u ${SERVICE_NAME} -n 20 --no-pager
 echo ""
 echo "Site is running at: https://vumgames.com"
 echo ""
