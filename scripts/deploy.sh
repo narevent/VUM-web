@@ -8,7 +8,7 @@ echo "================================"
 # Configuration
 PROJECT_DIR="/var/www/vumgames"
 REPO_URL="https://github.com/narevent/VUM-web.git"
-SERVICE_NAME="gunicorn-vumgames"
+SERVICE_NAME="gunicorn"
 
 # Prompt for repository URL
 echo "Enter your GitHub repository URL"

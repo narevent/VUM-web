@@ -6,7 +6,7 @@ echo "VumGames Update Script"
 echo "================================"
 
 PROJECT_DIR="/var/www/vumgames"
-SERVICE_NAME="gunicorn-vumgames"
+SERVICE_NAME="gunicorn"
 
 # Change to project directory
 cd $PROJECT_DIR

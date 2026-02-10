@@ -5,7 +5,7 @@ echo "VumGames System Status"
 echo "================================"
 echo ""
 
-SERVICE_NAME="gunicorn-vumgames"
+SERVICE_NAME="gunicorn"
 PROJECT_DIR="/var/www/vumgames"
 BACKUP_DIR="/var/backups/vumgames"
 SITE_URL="https://vumgames.com"

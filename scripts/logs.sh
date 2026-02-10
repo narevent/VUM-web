@@ -14,7 +14,7 @@ echo "6) All logs (tail -f)"
 echo ""
 read -p "Enter choice [1-6]: " choice
 
-SERVICE_NAME="gunicorn-vumgames"
+SERVICE_NAME="gunicorn"
 
 case $choice in
     1)

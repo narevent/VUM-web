@@ -7,7 +7,7 @@ echo "================================"
 
 PROJECT_DIR="/var/www/vumgames"
 BACKUP_DIR="/var/backups/vumgames"
-SERVICE_NAME="gunicorn-vumgames"
+SERVICE_NAME="gunicorn"
 
 # List available backups
 echo "Available backups:"
