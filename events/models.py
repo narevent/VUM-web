@@ -9,29 +9,22 @@ import uuid
 
 class GameSession(TranslatableModel):
     """Represents a gaming session time slot"""
-    GAME_TYPES = [
-        ('rhythm', 'Rhythm Games'),
-        ('action', 'Action Games'),
-        ('puzzle', 'Puzzle Games'),
-        ('adventure', 'Adventure Games'),
-        ('mixed', 'Mixed Experience'),
-    ]
-
     translations = TranslatedFields(
         name=models.CharField(max_length=200),
         description=models.TextField(),
         button=models.CharField(max_length=32, blank=True, null=True),
     )
 
-    game_type = models.CharField(max_length=20, choices=GAME_TYPES, default='mixed')
+    collab = models.CharField(max_length=20, blank=True)
     date = models.DateField()
     start_time = models.TimeField()
     end_time = models.TimeField()
     max_participants = models.PositiveIntegerField(
-        default=8,
+        default=1,
         validators=[MinValueValidator(1), MaxValueValidator(20)]
     )
-    price_per_person = models.DecimalField(max_digits=6, decimal_places=2)
+    price_per_person = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+    private = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

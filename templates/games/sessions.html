@@ -30,15 +30,6 @@
                             <label for="date_to" class="form-label">To Date</label>
                             <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
                         </div>
-                        <div class="col-md-3">
-                            <label for="game_type" class="form-label">Game Type</label>
-                            <select class="form-control form-select" id="game_type" name="game_type">
-                                <option value="">All Types</option>
-                                {% for value, label in game_types %}
-                                    <option value="{{ value }}" {% if selected_game_type == value %}selected{% endif %}>{{ label }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
                         <div class="col-md-3 d-flex align-items-end gap-2">
                             <button type="submit" class="btn btn-primary flex-grow-1">
                                 <span>Filter</span>
@@ -60,7 +51,7 @@
                 <div class="session-card">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <h5 class="card-title mb-0" style="color: var(--text-primary); font-size: 1.25rem;">{{ session.name }}</h5>
-                        <span class="session-badge">{{ session.get_game_type_display }}</span>
+                        <span class="session-badge">{{ session.collab }}</span>
                     </div>
                     
                     <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">{{ session.description|truncatewords:20 }}</p>
@@ -135,10 +126,10 @@
                 <ul class="pagination justify-content-center" style="gap: 0.5rem;">
                     {% if page_obj.has_previous %}
                         <li class="page-item">
-                            <a class="page-link" href="?page=1{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.game_type %}&game_type={{ request.GET.game_type }}{% endif %}" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; padding: 0.5rem 1rem;">First</a>
+                            <a class="page-link" href="?page=1{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; padding: 0.5rem 1rem;">First</a>
                         </li>
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.game_type %}&game_type={{ request.GET.game_type }}{% endif %}" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; padding: 0.5rem 1rem;">Previous</a>
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; padding: 0.5rem 1rem;">Previous</a>
                         </li>
                     {% endif %}
                     
@@ -150,10 +141,10 @@
                     
                     {% if page_obj.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.game_type %}&game_type={{ request.GET.game_type }}{% endif %}" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; padding: 0.5rem 1rem;">Next</a>
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; padding: 0.5rem 1rem;">Next</a>
                         </li>
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.game_type %}&game_type={{ request.GET.game_type }}{% endif %}" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; padding: 0.5rem 1rem;">Last</a>
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; padding: 0.5rem 1rem;">Last</a>
                         </li>
                     {% endif %}
                 </ul>

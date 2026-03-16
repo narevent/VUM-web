@@ -6,7 +6,7 @@ from .models import GameSession, Booking
 @admin.register(GameSession)
 class GameSessionAdmin(TranslatableAdmin):
     list_display = ['name', 'date', 'start_time', 'end_time', 'available_spots', 'max_participants', 'is_active']
-    list_filter = ['date', 'game_type', 'is_active']
+    list_filter = ['date', 'collab', 'is_active']
     search_fields = ['name', 'description']
     date_hierarchy = 'date'
     

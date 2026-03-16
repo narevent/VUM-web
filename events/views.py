@@ -23,14 +23,14 @@ def sessions_list(request):
     # Filter by date range if provided
     date_from = request.GET.get('date_from')
     date_to = request.GET.get('date_to')
-    game_type = request.GET.get('game_type')
+    collab = request.GET.get('collab')
     
     if date_from:
         sessions = sessions.filter(date__gte=date_from)
     if date_to:
         sessions = sessions.filter(date__lte=date_to)
-    if game_type:
-        sessions = sessions.filter(game_type=game_type)
+    #if collab:
+    #    sessions = sessions.filter(collab=collab)
     
     # Pagination
     paginator = Paginator(sessions, 12)
@@ -41,8 +41,9 @@ def sessions_list(request):
     
     context = {
         'page_obj': page_obj,
-        'game_types': GameSession.GAME_TYPES,
-        'selected_game_type': game_type,
+        #'game_types': GameSession.GAME_TYPES,
+        #'selected_game_type': game_type,
+        #'collab': collab,
         'date_from': date_from,
         'date_to': date_to,
         'header': header,
