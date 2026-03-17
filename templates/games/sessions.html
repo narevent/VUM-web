@@ -100,9 +100,11 @@
                                 Fully Booked
                             </button>
                         {% else %}
-                            <a href="{% url 'book_session' session.id %}" class="btn btn-primary w-100">
-                                <span>{{session.button}}</span>
-                            </a>
+                            {% if not session.private %}
+                                <a href="{% url 'book_session' session.id %}" class="btn btn-primary w-100">
+                                    <span>{{session.button}}</span>
+                                </a>
+                            {% endif %}
                         {% endif %}
                     </div>
                 </div>
