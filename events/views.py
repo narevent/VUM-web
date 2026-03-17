@@ -23,15 +23,12 @@ def sessions_list(request):
     # Filter by date range if provided
     date_from = request.GET.get('date_from')
     date_to = request.GET.get('date_to')
-    collab = request.GET.get('collab')
     
     if date_from:
         sessions = sessions.filter(date__gte=date_from)
     if date_to:
         sessions = sessions.filter(date__lte=date_to)
-    #if collab:
-    #    sessions = sessions.filter(collab=collab)
-    
+
     # Pagination
     paginator = Paginator(sessions, 12)
     page_number = request.GET.get('page')
@@ -41,9 +38,6 @@ def sessions_list(request):
     
     context = {
         'page_obj': page_obj,
-        #'game_types': GameSession.GAME_TYPES,
-        #'selected_game_type': game_type,
-        #'collab': collab,
         'date_from': date_from,
         'date_to': date_to,
         'header': header,
@@ -96,8 +90,14 @@ def book_session(request, session_id):
                 return redirect('payment', access_token=booking.access_token)
             else:
                 # Fallback to confirmation without payment
-                messages.success(request, f'Booking confirmed! Reference: {booking.booking_reference}')
-                return redirect('payment', access_token=booking.access_token)
+                # messages.success(request, f'Booking confirmed! Reference: {booking.booking_reference}')
+                if session.price_per_person > 0:
+                    print('aajax')
+                    return redirect('payment', access_token=booking.access_token)
+                else:
+                    print('gee')
+                    return redirect('booking_success', access_token=booking.access_token)
+
     else:
         form = BookingForm(session=session)
     
