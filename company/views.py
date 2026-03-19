@@ -149,7 +149,7 @@ def contact(request):
                 send_mail(
                     subject,
                     message,
-                    settings.DEFAULT_FROM_EMAIL,
+                    form.cleaned_data['email'],
                     [settings.DEFAULT_FROM_EMAIL],
                     fail_silently=False,
                 )
