@@ -166,6 +166,10 @@ def stripe_webhook(request):
         
         try:
             booking = Booking.objects.get(id=booking_id)
+            
+            if booking.payment_status == 'completed':
+                return JsonResponse({'status': 'already processed'})
+            
             booking.payment_status = 'completed'
             booking.is_confirmed = True
             booking.status = 'confirmed'
