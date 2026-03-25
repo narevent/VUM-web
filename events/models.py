@@ -16,6 +16,8 @@ class GameSession(TranslatableModel):
     )
 
     collab = models.CharField(max_length=20, blank=True)
+    address = models.CharField(max_length=200, blank=True)
+    city = models.CharField(max_length=100, blank=True)
     date = models.DateField()
     start_time = models.TimeField()
     end_time = models.TimeField()
