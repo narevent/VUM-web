@@ -83,18 +83,19 @@ def book_session(request, session_id):
                 })
             
             booking.save()
-            
-            # Create payment intent
-            payment_intent = booking.create_payment_intent()
-            if payment_intent:
-                return redirect('payment', access_token=booking.access_token)
-            else:
-                # Fallback to confirmation without payment
-                # messages.success(request, f'Booking confirmed! Reference: {booking.booking_reference}')
-                if session.price_per_person > 0:
-                    return redirect('payment', access_token=booking.access_token) # 'booking_success' if only reservation
-                else:
-                    return redirect('booking_success', access_token=booking.access_token)
+
+            # Free sessions don't need payment — confirm immediately
+            if session.price_per_person == 0:
+                booking.payment_status = 'completed'
+                booking.is_confirmed = True
+                booking.status = 'confirmed'
+                booking.save()
+                send_booking_confirmation_email(booking)
+                return redirect('booking_success', access_token=booking.access_token)
+
+            # Paid sessions: create payment intent and proceed to payment
+            booking.create_payment_intent()
+            return redirect('payment', access_token=booking.access_token)
 
     else:
         form = BookingForm(session=session)
@@ -122,8 +123,9 @@ def payment(request, access_token):
         messages.success(request, 'Booking confirmed! Please bring cash to the event.')
         return redirect('booking_success', access_token=booking.access_token)
     
+    # If payment was already completed (e.g. user revisits the page),
+    # just redirect to success — email was already sent via the webhook.
     if booking.payment_status == 'completed':
-        send_booking_confirmation_email(booking)
         return redirect('booking_success', access_token=booking.access_token)
     
     # Create or get payment intent for card/Revolut payments
@@ -171,7 +173,7 @@ def stripe_webhook(request):
             booking.payment_method = payment_intent.get('payment_method_types', ['card'])[0]
             booking.save()
             
-            # Send confirmation email
+            # Send confirmation email after successful card/Revolut payment
             send_booking_confirmation_email(booking)
             
         except Booking.DoesNotExist:
@@ -203,7 +205,7 @@ def paypal_webhook(request):
                     booking.payment_completed_at = timezone.now()
                     booking.save()
                     
-                    # Send confirmation email
+                    # Send confirmation email after successful PayPal payment
                     send_booking_confirmation_email(booking)
                     
                 except Booking.DoesNotExist:
@@ -245,25 +247,6 @@ def send_booking_confirmation_email(booking):
 def send_cash_payment_confirmation_email(booking):
     """Send cash payment booking confirmation email"""
     subject = f'Booking Confirmed - Pay at Event - {booking.booking_reference}'
-    
-    # Text content
-    '''text_content = f"""
-    Your booking has been confirmed!
-    
-    Booking Reference: {booking.booking_reference}
-    Session: {booking.session.name}
-    Date: {booking.session.date}
-    Time: {booking.session.start_time} - {booking.session.end_time}
-    Participants: {booking.participants}
-    Total Amount: €{booking.total_price}
-    
-    PAYMENT METHOD: Cash at Event
-    
-    Please bring €{booking.total_price} in cash when you arrive at the event.
-    Show this booking reference to complete your payment: {booking.booking_reference}
-    
-    Thank you for your booking!
-    """'''
 
     text_content = render_to_string('emails/cash_booking_confirmation.txt', {
         'booking': booking,
