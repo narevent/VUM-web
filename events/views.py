@@ -123,6 +123,7 @@ def payment(request, access_token):
         return redirect('booking_success', access_token=booking.access_token)
     
     if booking.payment_status == 'completed':
+        send_booking_confirmation_email(booking)
         return redirect('booking_success', access_token=booking.access_token)
     
     # Create or get payment intent for card/Revolut payments
