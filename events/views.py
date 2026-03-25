@@ -92,10 +92,8 @@ def book_session(request, session_id):
                 # Fallback to confirmation without payment
                 # messages.success(request, f'Booking confirmed! Reference: {booking.booking_reference}')
                 if session.price_per_person > 0:
-                    print('aajax')
-                    return redirect('payment', access_token=booking.access_token)
+                    return redirect('payment', access_token=booking.access_token) # 'booking_success' if only reservation
                 else:
-                    print('gee')
                     return redirect('booking_success', access_token=booking.access_token)
 
     else:
