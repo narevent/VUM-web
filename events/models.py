@@ -112,7 +112,7 @@ class Booking(models.Model):
                 amount=int(self.total_price * 100),  # Convert to cents
                 currency='eur',
                 metadata={
-                    'booking_id': self.id,
+                    'booking_id': str(self.id),  # <-- was self.id (UUID object)
                     'booking_reference': self.booking_reference,
                     'session_name': self.session.safe_translation_getter('name', any_language=True),
                 }
