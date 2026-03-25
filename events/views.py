@@ -247,7 +247,7 @@ def send_cash_payment_confirmation_email(booking):
     subject = f'Booking Confirmed - Pay at Event - {booking.booking_reference}'
     
     # Text content
-    text_content = f"""
+    '''text_content = f"""
     Your booking has been confirmed!
     
     Booking Reference: {booking.booking_reference}
@@ -263,7 +263,12 @@ def send_cash_payment_confirmation_email(booking):
     Show this booking reference to complete your payment: {booking.booking_reference}
     
     Thank you for your booking!
-    """
+    """'''
+
+    text_content = render_to_string('emails/cash_booking_confirmation.txt', {
+        'booking': booking,
+        'session': booking.session,
+    })
     
     # HTML content
     html_content = render_to_string('emails/cash_booking_confirmation.html', {

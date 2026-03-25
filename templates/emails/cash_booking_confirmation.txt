@@ -1,0 +1,51 @@
+VUM Games - Booking Confirmed - PAYMENT AT EVENT
+
+Dear {{ booking.customer_name }},
+
+Great news! Your booking with VUM Games has been confirmed!
+
+*** IMPORTANT: PAYMENT REQUIRED ***
+You have selected to pay with CASH at the event.
+Amount to pay: €{{ booking.total_price }}
+
+YOUR BOOKING REFERENCE CODE:
+{{ booking.booking_reference }}
+*** SAVE THIS CODE - YOU MUST SHOW IT AT THE EVENT ***
+
+BOOKING DETAILS:
+Session: {{ session.name }}
+Date: {{ session.date|date:"l, F d, Y" }}
+Time: {{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}
+Participants: {{ booking.participants }}
+Amount Due: €{{ booking.total_price }}
+Payment Method: PAY AT EVENT
+
+IMPORTANT PAYMENT INSTRUCTIONS:
+✓ Arrive 15 minutes early to complete your payment
+✓ Show your booking reference code: {{ booking.booking_reference }}
+✓ Payment is required BEFORE entering the gaming session
+✓ We accept both card payments as Euro (€) cash payments at the event
+✓ If paying with cash, bring exactly €{{ booking.total_price }} in Euro cash
+
+WHAT TO BRING:
+- Your booking reference code ({{ booking.booking_reference }})
+- €{{ booking.total_price }} in either cash or card payment
+- Comfortable clothes
+- Your enthusiasm and energy!
+
+LOCATION:
+VUM Games
+{{ session.address }}
+{{ session.city }}
+
+REMINDER: If you cannot pay at the event, please contact us at least 24 hours in advance to arrange an alternative payment method.
+
+Questions? Contact us:
+Email: contact@vumgames.com
+
+See you soon!
+
+Best regards,
+The VUM Games Team
+
+© 2026 VUM Games. All rights reserved.
