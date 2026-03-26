@@ -1,319 +1,387 @@
-<!-- ========================================== -->
 <!-- templates/emails/cash_booking_confirmation.html -->
-<!-- ========================================== -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Booking Confirmed - Payment at event</title>
+    <title>Booking Confirmed – Pay at Event</title>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Raleway', -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: #0A0E1A;
             color: #FFFFFF;
         }
         .container {
             max-width: 600px;
             margin: 0 auto;
-            background-color: #0F1524;
-            border: 1px solid #1E293B;
+            background-color: #0A0E1A;
         }
         .header {
-            background: linear-gradient(135deg, #FFC107 0%, #FF9800 100%);
-            padding: 40px 20px;
+            background: linear-gradient(135deg, #FF3366 0%, #FF6B9D 100%);
+            padding: 44px 30px;
             text-align: center;
         }
-        .header h1 {
-            margin: 0;
-            font-size: 28px;
+        .header .brand {
+            font-size: 13px;
             font-weight: 800;
-            color: #000000;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.75);
+            margin-bottom: 16px;
+        }
+        .header h1 {
+            margin: 0 0 10px;
+            font-size: 30px;
+            font-weight: 900;
+            color: #FFFFFF;
+            letter-spacing: -0.5px;
         }
         .header p {
-            margin: 10px 0 0;
-            font-size: 16px;
-            color: rgba(0, 0, 0, 0.8);
+            margin: 0;
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.85);
+            font-weight: 500;
         }
         .content {
             padding: 40px 30px;
         }
         .greeting {
             font-size: 18px;
-            margin-bottom: 20px;
-            color: #E2E8F0;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #FFFFFF;
         }
         .intro {
-            font-size: 16px;
-            line-height: 1.6;
-            margin-bottom: 30px;
-            color: #94A3B8;
+            font-size: 15px;
+            line-height: 1.7;
+            margin-bottom: 32px;
+            color: #A0AEC0;
         }
         .cash-alert {
-            background: linear-gradient(135deg, #FFC107 0%, #FF9800 100%);
+            background-color: #12172E;
+            border: 1px solid rgba(255, 51, 102, 0.3);
+            border-top: 3px solid #FF3366;
             border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 30px;
+            padding: 28px 24px;
             text-align: center;
+            margin-bottom: 24px;
         }
         .cash-alert h2 {
-            margin: 0 0 10px;
-            font-size: 24px;
-            font-weight: 800;
-            color: #000000;
+            margin: 0 0 6px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #FF3366;
         }
-        .cash-alert p {
-            margin: 5px 0;
-            font-size: 16px;
-            color: rgba(0, 0, 0, 0.9);
-            line-height: 1.6;
+        .cash-alert .cash-label {
+            font-size: 14px;
+            color: #A0AEC0;
+            margin: 0 0 10px;
         }
         .cash-amount {
-            font-size: 48px;
+            font-size: 52px;
             font-weight: 900;
-            color: #000000;
-            margin: 15px 0;
+            color: #FFFFFF;
+            line-height: 1;
+            margin: 4px 0 12px;
+        }
+        .cash-alert .cash-note {
+            font-size: 13px;
+            font-weight: 600;
+            color: #FF3366;
+            margin: 0;
+        }
+        .reference-box {
+            background-color: #12172E;
+            border: 1px solid rgba(255, 51, 102, 0.25);
+            border-radius: 12px;
+            padding: 24px 20px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .reference-box p {
+            margin: 0 0 8px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #FF3366;
+        }
+        .reference-code {
+            font-size: 34px;
+            font-weight: 900;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 3px;
+            color: #FFFFFF;
+        }
+        .reference-instruction {
+            margin: 12px 0 0;
+            font-size: 13px;
+            color: #A0AEC0;
         }
         .details-box {
-            background-color: rgba(0, 102, 255, 0.05);
-            border: 1px solid #1E293B;
+            background-color: #12172E;
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 30px;
+            padding: 24px;
+            margin-bottom: 24px;
         }
         .details-box h2 {
-            margin: 0 0 20px;
-            font-size: 20px;
+            margin: 0 0 18px;
+            font-size: 13px;
             font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
             color: #0066FF;
-            border-bottom: 2px solid #1E293B;
-            padding-bottom: 10px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
         .detail-row {
             display: flex;
-            padding: 12px 0;
-            border-bottom: 1px solid #1E293B;
+            padding: 11px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
         .detail-row:last-child {
             border-bottom: none;
+            padding-bottom: 0;
         }
         .detail-label {
             font-weight: 600;
-            color: #94A3B8;
+            font-size: 13px;
+            color: #A0AEC0;
             width: 140px;
             flex-shrink: 0;
         }
         .detail-value {
-            color: #E2E8F0;
+            color: #FFFFFF;
             font-weight: 500;
-        }
-        .reference-box {
-            background-color: rgba(255, 193, 7, 0.1);
-            border: 2px solid #FFC107;
-            border-radius: 12px;
-            padding: 25px;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .reference-box p {
-            margin: 0 0 8px;
             font-size: 14px;
-            color: #FFC107;
-            font-weight: 600;
         }
-        .reference-code {
-            font-size: 36px;
-            font-weight: 800;
-            font-family: 'Courier New', monospace;
-            letter-spacing: 3px;
-            color: #FFC107;
-        }
-        .reference-instruction {
-            margin: 15px 0 0;
-            font-size: 14px;
-            color: #94A3B8;
-        }
-        .info-section {
-            background-color: rgba(255, 193, 7, 0.05);
-            border: 1px solid rgba(255, 193, 7, 0.2);
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 20px;
-        }
-        .info-section h3 {
-            margin: 0 0 15px;
+        .detail-value.highlight {
             font-size: 18px;
             font-weight: 700;
-            color: #FFC107;
+            color: #FF3366;
         }
-        .info-section ul {
+        .detail-value.pending {
+            color: #FFA500;
+            font-weight: 600;
+        }
+        .info-box {
+            background-color: #12172E;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .info-box h3 {
+            margin: 0 0 14px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #00D9FF;
+        }
+        .info-box ul {
             margin: 0;
-            padding-left: 20px;
-            color: #94A3B8;
+            padding-left: 18px;
+            color: #A0AEC0;
         }
-        .info-section ul li {
-            margin-bottom: 12px;
+        .info-box ul li {
+            margin-bottom: 9px;
             line-height: 1.6;
+            font-size: 14px;
         }
-        .info-section ul li strong {
-            color: #E2E8F0;
+        .info-box ul li strong {
+            color: #FFFFFF;
         }
         .reminder-box {
-            background-color: rgba(239, 68, 68, 0.1);
-            border-left: 4px solid #EF4444;
-            border-radius: 8px;
-            padding: 20px;
+            background-color: #12172E;
+            border: 1px solid rgba(255, 51, 102, 0.2);
+            border-left: 3px solid #FF3366;
+            border-radius: 12px;
+            padding: 18px 20px;
             margin-bottom: 20px;
         }
         .reminder-box p {
-            margin: 5px 0;
-            color: #FCA5A5;
-            font-weight: 600;
+            margin: 0;
+            font-size: 13px;
+            color: #A0AEC0;
+            line-height: 1.6;
+        }
+        .reminder-box p strong {
+            color: #FF3366;
         }
         .location-box {
-            background-color: rgba(0, 217, 255, 0.05);
-            border: 1px solid #1E293B;
+            background-color: #12172E;
+            border: 1px solid rgba(0, 217, 255, 0.15);
+            border-left: 3px solid #00D9FF;
             border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
+            padding: 24px;
+            margin-bottom: 24px;
         }
         .location-box h3 {
-            margin: 0 0 15px;
-            font-size: 18px;
+            margin: 0 0 12px;
+            font-size: 13px;
             font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
             color: #00D9FF;
         }
         .location-box p {
-            margin: 5px 0;
-            color: #E2E8F0;
+            margin: 4px 0;
+            color: #FFFFFF;
+            font-size: 14px;
             line-height: 1.6;
         }
-        .footer {
-            background-color: #060912;
-            padding: 30px;
-            text-align: center;
-            border-top: 1px solid #1E293B;
-        }
-        .footer p {
-            margin: 5px 0;
+        .contact-line {
             font-size: 14px;
-            color: #64748B;
+            color: #A0AEC0;
+            margin: 6px 0;
+            line-height: 1.6;
         }
-        .footer a {
+        .contact-line a {
             color: #0066FF;
             text-decoration: none;
+        }
+        .footer {
+            background-color: #060914;
+            padding: 32px 30px;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .footer .tagline {
+            font-size: 16px;
+            font-weight: 700;
+            color: #FFFFFF;
+            margin-bottom: 8px;
+        }
+        .footer p {
+            margin: 4px 0;
+            font-size: 13px;
+            color: #A0AEC0;
+        }
+        .footer .copyright {
+            margin-top: 20px;
+            font-size: 11px;
+            color: rgba(160, 174, 192, 0.5);
+        }
+        .divider {
+            border: none;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            margin: 28px 0;
         }
     </style>
 </head>
 <body>
     <div class="container">
+
         <div class="header">
-            <h1>Booking Confirmed - Pay at Event</h1>
-            <p>Your Spot is Reserved!</p>
+            <div class="brand">VUM Games</div>
+            <h1>Spot Reserved!</h1>
+            <p>Pay at the event to complete your booking</p>
         </div>
-        
+
         <div class="content">
-            <p class="greeting">Dear {{ booking.customer_name }},</p>
-            
+            <p class="greeting">Hey {{ booking.customer_name }},</p>
             <p class="intro">
-                Great news! Your booking with VUM Games has been confirmed. You've selected to pay with cash at the event. 
-                Please read the important payment information below.
+                Great news — your spot is reserved! You've chosen to pay at the event. 
+                Make sure you read the payment instructions below before you arrive.
             </p>
-            
+
             <div class="cash-alert">
-                <h2>Cash Payment Required</h2>
-                <p>Please bring exactly:</p>
+                <h2>Payment Due at Event</h2>
                 <div class="cash-amount">€{{ booking.total_price }}</div>
-                <p><strong>Payment must be made BEFORE the session starts</strong></p>
+                <p class="cash-note">Payment must be made before the session starts</p>
             </div>
-            
+
             <div class="reference-box">
-                <p>SHOW THIS CODE AT THE EVENT</p>
+                <p>Show this code at the event</p>
                 <div class="reference-code">{{ booking.booking_reference }}</div>
-                <p class="reference-instruction">Screenshot or write down this code - you'll need it!</p>
+                <p class="reference-instruction">Screenshot this email — you'll need the code!</p>
             </div>
-            
+
             <div class="details-box">
                 <h2>Booking Details</h2>
                 <div class="detail-row">
-                    <span class="detail-label">Session:</span>
+                    <span class="detail-label">Session</span>
                     <span class="detail-value">{{ session.name }}</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Date:</span>
+                    <span class="detail-label">Date</span>
                     <span class="detail-value">{{ session.date|date:"l, F d, Y" }}</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Time:</span>
-                    <span class="detail-value">{{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}</span>
+                    <span class="detail-label">Time</span>
+                    <span class="detail-value">{{ session.start_time|time:"H:i" }} – {{ session.end_time|time:"H:i" }}</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Participants:</span>
+                    <span class="detail-label">Participants</span>
                     <span class="detail-value">{{ booking.participants }}</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Amount Due:</span>
-                    <span class="detail-value" style="font-size: 20px; color: #FFC107;">€{{ booking.total_price }}</span>
+                    <span class="detail-label">Amount Due</span>
+                    <span class="detail-value highlight">€{{ booking.total_price }}</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Payment Method:</span>
-                    <span class="detail-value" style="color: #FFC107;">Pay at Event</span>
+                    <span class="detail-label">Payment</span>
+                    <span class="detail-value pending">Pay at Event</span>
                 </div>
             </div>
-            
-            <div class="info-section">
-                <h3>Important Payment Instructions</h3>
+
+            <div class="info-box">
+                <h3>Payment Instructions</h3>
                 <ul>
-                    <li><strong>Arrive 15 minutes early</strong> to complete your cash payment</li>
-                    <li><strong>Bring exact change if possible</strong> - we may have limited change available</li>
-                    <li><strong>Show your booking reference code</strong> ({{ booking.booking_reference }}) to our staff</li>
-                    <li><strong>Payment is required before entering</strong> the gaming session</li>
-                    <li>We accept Euro (€) cash only - no cards at the venue</li>
+                    <li>Arrive <strong>15 minutes early</strong> to complete your payment</li>
+                    <li>If paying in cash, bring <strong>exact change if possible</strong> — change may be limited</li>
+                    <li>Show your <strong>booking reference</strong> ({{ booking.booking_reference }}) to our staff</li>
+                    <li>We accept <strong>Euro (€) cash and card payments</strong> — no cards at the venue</li>
+                    <li>Entry is granted <strong>only after payment</strong> is completed</li>
                 </ul>
             </div>
-            
+
             <div class="reminder-box">
-                <p>IMPORTANT REMINDER</p>
-                <p>If you cannot pay at the event, please contact us at least 24 hours in advance to arrange an alternative payment method.</p>
+                <p>
+                    <strong>Can't make it?</strong> Please contact us at least 24 hours in advance if you need 
+                    to cancel or arrange an alternative payment method.
+                </p>
             </div>
-            
-            <div class="info-section" style="background-color: rgba(0, 217, 255, 0.05); border-color: #1E293B;">
+
+            <div class="info-box">
                 <h3>What to Bring</h3>
                 <ul>
-                    <li>Your booking reference code (screenshot this email!)</li>
-                    <li>€{{ booking.total_price }} in cash</li>
-                    <li>Comfortable clothes</li>
-                    <li>Your enthusiasm and energy! 🎮</li>
+                    <li>Your booking reference code (screenshot this email)</li>
+                    <li><strong>€{{ booking.total_price }}</strong> in cash</li>
+                    <li>Comfortable clothes — you'll be moving around</li>
+                    <li>Your energy and enthusiasm!</li>
                 </ul>
             </div>
-            
+
             <div class="location-box">
                 <h3>Location</h3>
                 <p><strong>VUM Games</strong></p>
                 <p>{{ session.address }}</p>
                 <p>{{ session.city }}</p>
             </div>
-            
-            <p style="color: #94A3B8; font-size: 14px; line-height: 1.6;">
-                Questions about your booking or payment? We're here to help!
-            </p>
-            <p style="color: #E2E8F0; margin: 10px 0;">
-                <strong>Email:</strong> <a href="mailto:contact@vumgames.com" style="color: #0066FF;">contact@vumgames.com</a>
+
+            <hr class="divider">
+
+            <p class="contact-line">Questions or need to make a change?</p>
+            <p class="contact-line">
+                <strong style="color: #FFFFFF;">Email:</strong>
+                <a href="mailto:contact@vumgames.com">contact@vumgames.com</a>
             </p>
         </div>
-        
+
         <div class="footer">
-            <p style="font-size: 16px; color: #E2E8F0; margin-bottom: 15px;">
-                <strong>See you soon!</strong>
-            </p>
-            <p>Best regards,</p>
-            <p><strong>The VUM Games Team</strong></p>
-            <p style="margin-top: 20px; font-size: 12px;">
-                © 2026 VUM Games. All rights reserved.
-            </p>
+            <p class="tagline">See you soon!</p>
+            <p>Best regards, <strong style="color: #FFFFFF;">The VUM Games Team</strong></p>
+            <p class="copyright">© 2026 VUM Games. All rights reserved.</p>
         </div>
+
     </div>
 </body>
 </html>

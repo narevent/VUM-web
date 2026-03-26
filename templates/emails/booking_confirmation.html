@@ -5,253 +5,300 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Booking Confirmation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Raleway', -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: #0A0E1A;
             color: #FFFFFF;
         }
         .container {
             max-width: 600px;
             margin: 0 auto;
-            background-color: #0F1524;
-            border: 1px solid #1E293B;
+            background-color: #0A0E1A;
         }
         .header {
             background: linear-gradient(135deg, #0066FF 0%, #00D9FF 100%);
-            padding: 40px 20px;
+            padding: 44px 30px;
             text-align: center;
         }
-        .header h1 {
-            margin: 0;
-            font-size: 28px;
+        .header .brand {
+            font-size: 13px;
             font-weight: 800;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.75);
+            margin-bottom: 16px;
+        }
+        .header h1 {
+            margin: 0 0 10px;
+            font-size: 30px;
+            font-weight: 900;
             color: #FFFFFF;
+            letter-spacing: -0.5px;
         }
         .header p {
-            margin: 10px 0 0;
-            font-size: 16px;
-            color: rgba(255, 255, 255, 0.9);
+            margin: 0;
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.85);
+            font-weight: 500;
         }
         .content {
             padding: 40px 30px;
         }
         .greeting {
             font-size: 18px;
-            margin-bottom: 20px;
-            color: #E2E8F0;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #FFFFFF;
         }
         .intro {
-            font-size: 16px;
-            line-height: 1.6;
-            margin-bottom: 30px;
-            color: #94A3B8;
-        }
-        .details-box {
-            background-color: rgba(0, 102, 255, 0.05);
-            border: 1px solid #1E293B;
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 30px;
-        }
-        .details-box h2 {
-            margin: 0 0 20px;
-            font-size: 20px;
-            font-weight: 700;
-            color: #0066FF;
-            border-bottom: 2px solid #1E293B;
-            padding-bottom: 10px;
-        }
-        .detail-row {
-            display: flex;
-            padding: 12px 0;
-            border-bottom: 1px solid #1E293B;
-        }
-        .detail-row:last-child {
-            border-bottom: none;
-        }
-        .detail-label {
-            font-weight: 600;
-            color: #94A3B8;
-            width: 140px;
-            flex-shrink: 0;
-        }
-        .detail-value {
-            color: #E2E8F0;
-            font-weight: 500;
+            font-size: 15px;
+            line-height: 1.7;
+            margin-bottom: 32px;
+            color: #A0AEC0;
         }
         .reference-box {
             background: linear-gradient(135deg, #0066FF 0%, #00D9FF 100%);
             border-radius: 12px;
-            padding: 20px;
+            padding: 24px 20px;
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 28px;
         }
         .reference-box p {
             margin: 0 0 8px;
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.9);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.8);
         }
         .reference-code {
-            font-size: 32px;
-            font-weight: 800;
+            font-size: 34px;
+            font-weight: 900;
             font-family: 'Courier New', monospace;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
             color: #FFFFFF;
         }
-        .info-section {
-            background-color: rgba(0, 217, 255, 0.05);
-            border: 1px solid #1E293B;
+        .details-box {
+            background-color: #12172E;
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 20px;
+            padding: 24px;
+            margin-bottom: 24px;
         }
-        .info-section h3 {
-            margin: 0 0 15px;
+        .details-box h2 {
+            margin: 0 0 18px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #0066FF;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .detail-row {
+            display: flex;
+            padding: 11px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .detail-label {
+            font-weight: 600;
+            font-size: 13px;
+            color: #A0AEC0;
+            width: 140px;
+            flex-shrink: 0;
+        }
+        .detail-value {
+            color: #FFFFFF;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        .detail-value.highlight {
             font-size: 18px;
             font-weight: 700;
             color: #00D9FF;
         }
-        .info-section ul {
-            margin: 0;
-            padding-left: 20px;
-            color: #94A3B8;
+        .detail-value.confirmed {
+            color: #00D9FF;
+            font-weight: 600;
         }
-        .info-section ul li {
-            margin-bottom: 10px;
-            line-height: 1.6;
-        }
-        .location-box {
-            background-color: rgba(255, 193, 7, 0.05);
-            border: 1px solid rgba(255, 193, 7, 0.2);
+        .info-box {
+            background-color: #12172E;
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 12px;
-            padding: 20px;
+            padding: 24px;
             margin-bottom: 20px;
         }
-        .location-box h3 {
-            margin: 0 0 15px;
-            font-size: 18px;
+        .info-box h3 {
+            margin: 0 0 14px;
+            font-size: 13px;
             font-weight: 700;
-            color: #FFC107;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #00D9FF;
+        }
+        .info-box ul {
+            margin: 0;
+            padding-left: 18px;
+            color: #A0AEC0;
+        }
+        .info-box ul li {
+            margin-bottom: 9px;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+        .info-box ul li strong {
+            color: #FFFFFF;
+        }
+        .location-box {
+            background-color: #12172E;
+            border: 1px solid rgba(255, 51, 102, 0.2);
+            border-left: 3px solid #FF3366;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .location-box h3 {
+            margin: 0 0 12px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #FF3366;
         }
         .location-box p {
-            margin: 5px 0;
-            color: #E2E8F0;
+            margin: 4px 0;
+            color: #FFFFFF;
+            font-size: 14px;
             line-height: 1.6;
         }
-        .footer {
-            background-color: #060912;
-            padding: 30px;
-            text-align: center;
-            border-top: 1px solid #1E293B;
-        }
-        .footer p {
-            margin: 5px 0;
+        .contact-line {
             font-size: 14px;
-            color: #64748B;
+            color: #A0AEC0;
+            margin: 6px 0;
+            line-height: 1.6;
         }
-        .footer a {
+        .contact-line a {
             color: #0066FF;
             text-decoration: none;
         }
-        .btn {
-            display: inline-block;
-            padding: 14px 32px;
-            background: linear-gradient(135deg, #0066FF 0%, #00D9FF 100%);
-            color: #FFFFFF;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
+        .footer {
+            background-color: #060914;
+            padding: 32px 30px;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .footer .tagline {
             font-size: 16px;
-            margin: 20px 0;
+            font-weight: 700;
+            color: #FFFFFF;
+            margin-bottom: 8px;
+        }
+        .footer p {
+            margin: 4px 0;
+            font-size: 13px;
+            color: #A0AEC0;
+        }
+        .footer .copyright {
+            margin-top: 20px;
+            font-size: 11px;
+            color: rgba(160, 174, 192, 0.5);
+        }
+        .divider {
+            border: none;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            margin: 28px 0;
         }
     </style>
 </head>
 <body>
     <div class="container">
+
         <div class="header">
+            <div class="brand">VUM Games</div>
             <h1>Booking Confirmed!</h1>
-            <p>Get Ready for an Epic Gaming Experience</p>
+            <p>Get ready for an epic gaming experience</p>
         </div>
-        
+
         <div class="content">
-            <p class="greeting">Dear {{ booking.customer_name }},</p>
-            
+            <p class="greeting">Hey {{ booking.customer_name }},</p>
             <p class="intro">
-                Thank you for booking with VUM Games! We're excited to have you join us for an amazing gaming experience. 
-                Your booking has been confirmed and we can't wait to see you!
+                Your booking is confirmed and your spot is locked in. We can't wait to see you at the session — 
+                all the details you need are below.
             </p>
-            
+
             <div class="reference-box">
                 <p>Your Booking Reference</p>
                 <div class="reference-code">{{ booking.booking_reference }}</div>
             </div>
-            
+
             <div class="details-box">
                 <h2>Booking Details</h2>
                 <div class="detail-row">
-                    <span class="detail-label">Session:</span>
+                    <span class="detail-label">Session</span>
                     <span class="detail-value">{{ session.name }}</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Date:</span>
+                    <span class="detail-label">Date</span>
                     <span class="detail-value">{{ session.date|date:"l, F d, Y" }}</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Time:</span>
-                    <span class="detail-value">{{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}</span>
+                    <span class="detail-label">Time</span>
+                    <span class="detail-value">{{ session.start_time|time:"H:i" }} – {{ session.end_time|time:"H:i" }}</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Participants:</span>
+                    <span class="detail-label">Participants</span>
                     <span class="detail-value">{{ booking.participants }}</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Total Amount:</span>
-                    <span class="detail-value" style="font-size: 20px; color: #00D9FF;">€{{ booking.total_price }}</span>
+                    <span class="detail-label">Total Paid</span>
+                    <span class="detail-value highlight">€{{ booking.total_price }}</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Payment Status:</span>
-                    <span class="detail-value" style="color: #10B981;">✓ Confirmed</span>
+                    <span class="detail-label">Status</span>
+                    <span class="detail-value confirmed">✓ Confirmed</span>
                 </div>
             </div>
-            
-            <div class="info-section">
-                <h3>Important Information</h3>
+
+            <div class="info-box">
+                <h3>Before You Arrive</h3>
                 <ul>
-                    <li>Please arrive <strong>15 minutes before</strong> your session starts</li>
-                    <li>We'll provide all instruments and equipment</li>
-                    <li>Bring comfortable clothes and get ready to have fun!</li>
-                    <li>Don't forget to bring your booking reference code</li>
+                    <li>Please arrive <strong>15 minutes early</strong> so we can get you set up</li>
+                    <li>All instruments and equipment are <strong>provided by us</strong></li>
+                    <li>Wear comfortable clothes — you'll be moving around</li>
+                    <li>Have your <strong>booking reference</strong> ready (screenshot this email)</li>
                 </ul>
             </div>
-            
+
             <div class="location-box">
                 <h3>Location</h3>
                 <p><strong>VUM Games</strong></p>
                 <p>{{ session.address }}</p>
                 <p>{{ session.city }}</p>
             </div>
-            
-            <p style="color: #94A3B8; font-size: 14px; line-height: 1.6;">
-                If you have any questions or need to make changes to your booking, please don't hesitate to contact us:
-            </p>
-            <p style="color: #E2E8F0; margin: 10px 0;">
-                <strong>Email:</strong> <a href="mailto:contact@vumgames.com" style="color: #0066FF;">contact@vumgames.com</a>
+
+            <hr class="divider">
+
+            <p class="contact-line">Questions or need to make a change?</p>
+            <p class="contact-line">
+                <strong style="color: #FFFFFF;">Email:</strong>
+                <a href="mailto:contact@vumgames.com">contact@vumgames.com</a>
             </p>
         </div>
-        
+
         <div class="footer">
-            <p style="font-size: 16px; color: #E2E8F0; margin-bottom: 15px;">
-                <strong>We can't wait to see you! 🎮</strong>
-            </p>
-            <p>Best regards,</p>
-            <p><strong>The VUM Games Team</strong></p>
-            <p style="margin-top: 20px; font-size: 12px;">
-                © 2026 VUM Games. All rights reserved.
-            </p>
+            <p class="tagline">See you there!</p>
+            <p>Best regards, <strong style="color: #FFFFFF;">The VUM Games Team</strong></p>
+            <p class="copyright">© 2026 VUM Games. All rights reserved.</p>
         </div>
+
     </div>
 </body>
 </html>
