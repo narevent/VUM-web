@@ -15,33 +15,72 @@ from sections.models import Header
 
 
 def sessions_list(request):
-    """List all available gaming sessions"""
-    sessions = GameSession.objects.filter(
-        date__gte=timezone.now().date(),
-        is_active=True
-    ).select_related('event').order_by('date', 'start_time')
+    """
+    List sessions grouped by event.
 
-    # Filter by date range if provided
+    Layout:
+      - Active events whose earliest upcoming session falls within the date
+        filter are shown as large event cards, with each of their upcoming
+        sessions listed as bookable timeslot rows inside.
+      - Sessions with no event attached are shown as standalone cards below.
+    """
+    from .models import Event
+    from django.db.models import Prefetch
+
     date_from = request.GET.get('date_from')
-    date_to = request.GET.get('date_to')
+    date_to   = request.GET.get('date_to')
+    today     = timezone.now().date()
 
+    # Base queryset — upcoming, active sessions only
+    base_qs = (
+        GameSession.objects
+        .filter(date__gte=today, is_active=True)
+        .select_related('event')
+        .prefetch_related('bookings')
+        .order_by('date', 'start_time')
+    )
     if date_from:
-        sessions = sessions.filter(date__gte=date_from)
+        base_qs = base_qs.filter(date__gte=date_from)
     if date_to:
-        sessions = sessions.filter(date__lte=date_to)
+        base_qs = base_qs.filter(date__lte=date_to)
 
-    # Pagination
-    paginator = Paginator(sessions, 12)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    # Fetch events that have at least one upcoming session in the filter window
+    events_qs = (
+        Event.objects
+        .filter(is_active=True, sessions__in=base_qs)
+        .prefetch_related(
+            Prefetch(
+                'sessions',
+                queryset=base_qs.filter(event__isnull=False),
+                to_attr='upcoming_sessions',
+            ),
+            Prefetch('ticket_types', to_attr='active_ticket_types'),
+        )
+        .distinct()
+    )
+
+    # Deduplicate while preserving earliest-session order
+    seen = set()
+    event_cards = []
+    for event in events_qs:
+        if event.id not in seen:
+            seen.add(event.id)
+            event_cards.append(event)
+    event_cards.sort(
+        key=lambda e: e.upcoming_sessions[0].date if e.upcoming_sessions else today
+    )
+
+    # Standalone sessions that belong to no event
+    standalone_sessions = base_qs.filter(event__isnull=True)
 
     header = Header.objects.filter(page='sessions').first()
 
     context = {
-        'page_obj': page_obj,
-        'date_from': date_from,
-        'date_to': date_to,
-        'header': header,
+        'event_cards':         event_cards,
+        'standalone_sessions': standalone_sessions,
+        'date_from':           date_from,
+        'date_to':             date_to,
+        'header':              header,
     }
     return render(request, 'games/sessions.html', context)
 

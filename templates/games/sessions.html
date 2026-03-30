@@ -4,24 +4,260 @@
 
 {% block title %}Gaming Sessions - VUM Games{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* ── Event card (outer shell) ───────────────────────────────── */
+    .event-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        overflow: hidden;
+        margin-bottom: 2rem;
+        transition: border-color 0.3s ease;
+    }
+
+    .event-card:hover {
+        border-color: rgba(0, 102, 255, 0.4);
+    }
+
+    .event-card-header {
+        padding: 2rem 2rem 1.5rem;
+        background: linear-gradient(135deg, rgba(0, 102, 255, 0.08) 0%, rgba(0, 217, 255, 0.04) 100%);
+        border-bottom: 1px solid var(--border-color);
+        position: relative;
+    }
+
+    .event-card-header::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0;
+        width: 4px; height: 100%;
+        background: var(--gradient-1);
+        border-radius: 0;
+    }
+
+    .event-name {
+        font-size: 1.6rem;
+        font-weight: 900;
+        color: var(--text-primary);
+        margin: 0 0 0.4rem;
+        letter-spacing: -0.3px;
+    }
+
+    .event-description {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    .event-meta-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .event-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.3rem 0.85rem;
+        border-radius: 99px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        background: rgba(255,255,255,0.03);
+    }
+
+    .event-pill i { color: var(--primary-color); font-size: 0.75rem; }
+
+    /* ── Ticket type chips inside header ────────────────────────── */
+    .ticket-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .ticket-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.35rem 0.9rem;
+        border-radius: 99px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        background: rgba(0, 102, 255, 0.12);
+        border: 1px solid rgba(0, 102, 255, 0.25);
+        color: var(--primary-color);
+    }
+
+    /* ── Timeslot rows ──────────────────────────────────────────── */
+    .timeslots-body {
+        padding: 1rem 2rem 1.5rem;
+    }
+
+    .timeslot-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.25rem;
+        border-radius: 14px;
+        border: 1px solid var(--border-color);
+        background: rgba(0, 102, 255, 0.02);
+        margin-bottom: 0.75rem;
+        transition: all 0.2s ease;
+        flex-wrap: wrap;
+    }
+
+    .timeslot-row:last-child { margin-bottom: 0; }
+
+    .timeslot-row:hover {
+        border-color: rgba(0, 102, 255, 0.35);
+        background: rgba(0, 102, 255, 0.05);
+    }
+
+    .timeslot-row.is-full {
+        opacity: 0.55;
+    }
+
+    .timeslot-row.is-passed {
+        opacity: 0.45;
+    }
+
+    /* Date block */
+    .ts-date {
+        min-width: 70px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    .ts-date-day {
+        font-size: 1.6rem;
+        font-weight: 900;
+        color: var(--text-primary);
+        line-height: 1;
+    }
+
+    .ts-date-month {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--primary-color);
+        letter-spacing: 1px;
+    }
+
+    /* Divider pip */
+    .ts-pip {
+        width: 4px; height: 4px;
+        border-radius: 50%;
+        background: var(--border-color);
+        flex-shrink: 0;
+    }
+
+    /* Time block */
+    .ts-time {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+
+    /* Session name */
+    .ts-name {
+        flex: 1;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        min-width: 120px;
+    }
+
+    .ts-name small {
+        display: block;
+        font-weight: 400;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-top: 0.15rem;
+    }
+
+    /* Spots badge */
+    .ts-spots {
+        font-size: 0.8rem;
+        font-weight: 700;
+        padding: 0.3rem 0.75rem;
+        border-radius: 99px;
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .ts-spots.spots-low   { border-color: rgba(255,165,0,0.4); color: #FFA500; }
+    .ts-spots.spots-full  { border-color: rgba(255,51,102,0.4); color: #FF3366; }
+    .ts-spots.spots-ok    { border-color: rgba(0,217,255,0.3);  color: var(--secondary-color); }
+
+    /* CTA button in timeslot */
+    .ts-btn {
+        flex-shrink: 0;
+    }
+
+    /* ── Standalone session cards (no event) ────────────────────── */
+    .session-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 1.75rem;
+        height: 100%;
+        transition: border-color 0.3s ease;
+    }
+
+    .session-card:hover {
+        border-color: rgba(0, 102, 255, 0.4);
+    }
+
+    /* ── Misc ───────────────────────────────────────────────────── */
+    .section-divider {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin: 2.5rem 0 1.5rem;
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+    }
+
+    .section-divider::before,
+    .section-divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--border-color);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<!--
-<section class="hero" style="padding: 120px 0 80px;">
-    <div class="container">
-        <div class="text-center">
-            <h1 ...>{{header.title}}</h1>
-            <p class="lead" ...>{{header.content}}</p>
-        </div>
-    </div>
-</section>
--->
 <div class="container py-5">
+
     <!-- Filters -->
     <div class="row mb-5">
         <div class="col-12">
             <div class="card">
                 <div class="card-body" style="padding: 2rem;">
-                    <form method="get" class="row g-3">
+                    <form method="get" class="row g-3 align-items-end">
                         <div class="col-md-3">
                             <label for="date_from" class="form-label">From Date</label>
                             <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
@@ -30,10 +266,8 @@
                             <label for="date_to" class="form-label">To Date</label>
                             <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
                         </div>
-                        <div class="col-md-3 d-flex align-items-end gap-2">
-                            <button type="submit" class="btn btn-primary flex-grow-1">
-                                <span>Filter</span>
-                            </button>
+                        <div class="col-md-3 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-grow-1"><span>Filter</span></button>
                             <a href="{% url 'sessions_list' %}" class="btn btn-secondary">Clear</a>
                         </div>
                     </form>
@@ -42,140 +276,206 @@
         </div>
     </div>
 
-    <!-- Sessions Grid -->
-    <div class="row g-4">
-        {% for session in page_obj %}
-            <div class="col-lg-6 col-xl-4">
-                <div class="session-card">
-                    <!-- Header row: name + collab badge -->
-                    <div class="d-flex justify-content-between align-items-start mb-1">
-                        <h5 class="card-title mb-0" style="color: var(--text-primary); font-size: 1.25rem;">{{ session.name }}</h5>
-                        <span class="session-badge">{{ session.collab }}</span>
-                    </div>
+    {% if not event_cards and not standalone_sessions %}
+    <!-- Empty state -->
+    <div class="empty-state">
+        <i class="fas fa-calendar-times fa-4x mb-4" style="color: var(--text-secondary); opacity: 0.4;"></i>
+        <h3 style="color: var(--text-primary); margin-bottom: 1rem;">No Sessions Found</h3>
+        <p style="color: var(--text-secondary); margin-bottom: 2rem;">No gaming sessions match your criteria. Try adjusting your filters or check back soon.</p>
+        <a href="{% url 'sessions_list' %}" class="btn btn-primary"><span>View All Sessions</span></a>
+    </div>
+    {% endif %}
 
-                    <!-- Event label (shown only when a session belongs to an event) -->
-                    {% if session.event %}
-                    <div class="mb-2">
-                        <small style="color: var(--primary-color); font-weight: 600;">
-                            <i class="fas fa-calendar-star me-1"></i>{{ session.event.name }}
-                        </small>
-                    </div>
+    <!-- ══ EVENT CARDS ══════════════════════════════════════════════════ -->
+    {% for event in event_cards %}
+    <div class="event-card">
+
+        <!-- Event header -->
+        <div class="event-card-header">
+            <div class="row align-items-start">
+                <div class="col-md-8">
+                    <h2 class="event-name">{{ event.name }}</h2>
+                    {% if event.description %}
+                    <p class="event-description">{{ event.description }}</p>
                     {% endif %}
 
-                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">{{ session.description|truncatewords:20 }}</p>
+                    <!-- Meta pills: session count + date span -->
+                    <div class="event-meta-pills">
+                        <span class="event-pill">
+                            <i class="fas fa-calendar-alt"></i>
+                            {{ event.upcoming_sessions|length }}
+                            session{{ event.upcoming_sessions|length|pluralize }}
+                        </span>
+                        {% if event.upcoming_sessions %}
+                        <span class="event-pill">
+                            <i class="fas fa-clock"></i>
+                            From {{ event.upcoming_sessions.0.date|date:"M d, Y" }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
 
-                    <div class="row g-3 mb-3">
-                        <!-- Date & Time -->
+                <!-- Ticket type chips -->
+                <div class="col-md-4 mt-3 mt-md-0 text-md-end">
+                    {% if event.active_ticket_types %}
+                    <div class="ticket-chips justify-content-md-end">
+                        {% for tt in event.active_ticket_types %}
+                        <span class="ticket-chip">
+                            <i class="fas fa-tag"></i>
+                            {{ tt.name }} — €{{ tt.price }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeslot rows -->
+        <div class="timeslots-body">
+            {% for session in event.upcoming_sessions %}
+            <div class="timeslot-row
+                {% if not session.is_upcoming %}is-passed
+                {% elif session.is_full %}is-full{% endif %}">
+
+                <!-- Date -->
+                <div class="ts-date">
+                    <div class="ts-date-day">{{ session.date|date:"d" }}</div>
+                    <div class="ts-date-month">{{ session.date|date:"M" }}</div>
+                </div>
+
+                <div class="ts-pip"></div>
+
+                <!-- Time -->
+                <div class="ts-time">
+                    <i class="fas fa-clock me-1" style="font-size:0.75rem; color:var(--primary-color);"></i>
+                    {{ session.start_time|time:"H:i" }} – {{ session.end_time|time:"H:i" }}
+                </div>
+
+                <div class="ts-pip"></div>
+
+                <!-- Session name + collab -->
+                <div class="ts-name">
+                    {{ session.name }}
+                    {% if session.collab %}
+                    <small>{{ session.collab }}</small>
+                    {% endif %}
+                </div>
+
+                <!-- Spots badge -->
+                {% if not session.is_upcoming %}
+                <span class="ts-spots">Passed</span>
+                {% elif session.is_full %}
+                <span class="ts-spots spots-full">
+                    <i class="fas fa-times-circle me-1"></i>Full
+                </span>
+                {% elif session.available_spots <= 2 %}
+                <span class="ts-spots spots-low">
+                    <i class="fas fa-exclamation-circle me-1"></i>{{ session.available_spots }} left
+                </span>
+                {% else %}
+                <span class="ts-spots spots-ok">
+                    {{ session.available_spots }}/{{ session.max_participants }} spots
+                </span>
+                {% endif %}
+
+                <!-- CTA -->
+                <div class="ts-btn">
+                    {% if not session.is_upcoming %}
+                    <button class="btn btn-secondary btn-sm" disabled>Passed</button>
+                    {% elif session.is_full %}
+                    <button class="btn btn-secondary btn-sm" disabled>Full</button>
+                    {% elif not session.private %}
+                    <a href="{% url 'book_session' session.id %}" class="btn btn-primary btn-sm">
+                        <span>{{ session.button|default:"Book" }}</span>
+                    </a>
+                    {% endif %}
+                </div>
+
+            </div>
+            {% empty %}
+            <p style="color: var(--text-secondary); padding: 1rem 0; margin: 0;">
+                No upcoming sessions for this event.
+            </p>
+            {% endfor %}
+        </div>
+
+    </div>
+    {% endfor %}
+
+    <!-- ══ STANDALONE SESSIONS (no event) ══════════════════════════════ -->
+    {% if standalone_sessions %}
+        {% if event_cards %}
+        <div class="section-divider">Other Sessions</div>
+        {% endif %}
+
+        <div class="row g-4">
+            {% for session in standalone_sessions %}
+            <div class="col-lg-6 col-xl-4">
+                <div class="session-card">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 style="color: var(--text-primary); font-size: 1.2rem; font-weight: 700; margin: 0;">
+                            {{ session.name }}
+                        </h5>
+                        {% if session.collab %}
+                        <span class="session-badge">{{ session.collab }}</span>
+                        {% endif %}
+                    </div>
+
+                    {% if session.description %}
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin-bottom: 1.25rem;">
+                        {{ session.description|truncatewords:20 }}
+                    </p>
+                    {% endif %}
+
+                    <div class="row g-2 mb-3">
                         <div class="col-6">
-                            <div style="padding: 1rem; background: rgba(0, 102, 255, 0.05); border-radius: 12px; border: 1px solid var(--border-color);">
-                                <small style="color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">Date & Time</small>
-                                <strong style="color: var(--text-primary); display: block; margin-bottom: 0.25rem;">{{ session.date|date:"M d" }}</strong>
-                                <small style="color: var(--text-secondary);">{{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}</small>
+                            <div style="padding: 0.85rem; background: rgba(0,102,255,0.05); border-radius: 12px; border: 1px solid var(--border-color);">
+                                <small style="color: var(--text-secondary); display: block; margin-bottom: 0.3rem;">Date & Time</small>
+                                <strong style="color: var(--text-primary); display: block;">{{ session.date|date:"M d" }}</strong>
+                                <small style="color: var(--text-secondary);">{{ session.start_time|time:"H:i" }} – {{ session.end_time|time:"H:i" }}</small>
                             </div>
                         </div>
-
-                        <!-- Price: show ticket range if event has ticket types, else legacy price -->
                         <div class="col-6">
-                            <div style="padding: 1rem; background: rgba(0, 102, 255, 0.05); border-radius: 12px; border: 1px solid var(--border-color);">
-                                {% if session.has_ticket_types %}
-                                    {% with types=session.ticket_types %}
-                                    <small style="color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">Tickets from</small>
-                                    <strong style="color: var(--primary-color); font-size: 1.5rem; display: block;">
-                                        €{{ types.first.price }}
-                                    </strong>
-                                    <small style="color: var(--text-secondary);">{{ types.count }} option{{ types.count|pluralize }}</small>
-                                    {% endwith %}
-                                {% else %}
-                                    <small style="color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">Price</small>
-                                    <strong style="color: var(--primary-color); font-size: 1.75rem; display: block;">
-                                        {% if session.price_per_person > 0 %}€{{ session.price_per_person }}{% else %}Free{% endif %}
-                                    </strong>
-                                    <small style="color: var(--text-secondary);">
-                                        {% if session.price_per_person > 0 %}per person{% else %}for entrance{% endif %}
-                                    </small>
-                                {% endif %}
+                            <div style="padding: 0.85rem; background: rgba(0,102,255,0.05); border-radius: 12px; border: 1px solid var(--border-color);">
+                                <small style="color: var(--text-secondary); display: block; margin-bottom: 0.3rem;">Price</small>
+                                <strong style="color: var(--primary-color); font-size: 1.5rem; display: block;">
+                                    {% if session.price_per_person > 0 %}€{{ session.price_per_person }}{% else %}Free{% endif %}
+                                </strong>
+                                <small style="color: var(--text-secondary);">
+                                    {% if session.price_per_person > 0 %}per person{% else %}for entrance{% endif %}
+                                </small>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Availability -->
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <small style="color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">Available Spots</small>
-                            <span class="availability-badge {% if session.available_spots <= 2 %}low{% elif session.available_spots == 0 %}full{% endif %}">
-                                {{ session.available_spots }}/{{ session.max_participants }}
-                            </span>
-                        </div>
-                        <div class="text-end">
-                            {% if not session.is_upcoming %}
-                                <small style="color: var(--text-secondary);">Session passed</small>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- CTA button -->
-                    <div class="mt-3">
+                    <!-- Availability + CTA -->
+                    <div class="d-flex justify-content-between align-items-center">
                         {% if not session.is_upcoming %}
-                            <button class="btn btn-secondary w-100" disabled>Session Passed</button>
+                        <span style="color: var(--text-secondary); font-size: 0.85rem;">Session passed</span>
                         {% elif session.is_full %}
-                            <button class="btn btn-secondary w-100" disabled>Fully Booked</button>
+                        <span class="ts-spots spots-full">Full</span>
+                        {% elif session.available_spots <= 2 %}
+                        <span class="ts-spots spots-low">{{ session.available_spots }} left</span>
                         {% else %}
-                            {% if not session.private %}
-                                <a href="{% url 'book_session' session.id %}" class="btn btn-primary w-100">
-                                    <span>{{ session.button }}</span>
-                                </a>
-                            {% endif %}
+                        <span class="ts-spots spots-ok">{{ session.available_spots }}/{{ session.max_participants }} spots</span>
+                        {% endif %}
+
+                        {% if not session.is_upcoming %}
+                        <button class="btn btn-secondary btn-sm" disabled>Passed</button>
+                        {% elif session.is_full %}
+                        <button class="btn btn-secondary btn-sm" disabled>Full</button>
+                        {% elif not session.private %}
+                        <a href="{% url 'book_session' session.id %}" class="btn btn-primary btn-sm">
+                            <span>{{ session.button|default:"Book" }}</span>
+                        </a>
                         {% endif %}
                     </div>
                 </div>
             </div>
-        {% empty %}
-            <div class="col-12">
-                <div class="text-center p-5" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 20px;">
-                    <i class="fas fa-calendar-times fa-4x mb-4" style="color: var(--text-secondary); opacity: 0.5;"></i>
-                    <h3 style="color: var(--text-primary); margin-bottom: 1rem;">No Sessions Found</h3>
-                    <p style="color: var(--text-secondary); margin-bottom: 2rem;">No gaming sessions match your criteria. Try adjusting your filters or check back later for new sessions.</p>
-                    <a href="{% url 'sessions_list' %}" class="btn btn-primary">
-                        <span>View All Sessions</span>
-                    </a>
-                </div>
-            </div>
-        {% endfor %}
-    </div>
-
-    <!-- Pagination -->
-    {% if page_obj.has_other_pages %}
-    <div class="row mt-5">
-        <div class="col-12">
-            <nav aria-label="Sessions pagination">
-                <ul class="pagination justify-content-center" style="gap: 0.5rem;">
-                    {% if page_obj.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page=1{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; padding: 0.5rem 1rem;">First</a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; padding: 0.5rem 1rem;">Previous</a>
-                        </li>
-                    {% endif %}
-
-                    <li class="page-item active">
-                        <span class="page-link" style="background: var(--gradient-1); border: none; color: white; border-radius: 8px; padding: 0.5rem 1.5rem;">
-                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-                        </span>
-                    </li>
-
-                    {% if page_obj.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; padding: 0.5rem 1rem;">Next</a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; padding: 0.5rem 1rem;">Last</a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </nav>
+            {% endfor %}
         </div>
-    </div>
     {% endif %}
+
 </div>
 {% endblock %}
