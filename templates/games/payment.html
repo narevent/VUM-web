@@ -420,6 +420,18 @@
                 <hr style="border-color: var(--border-color); margin: 1.5rem 0;">
                 
                 <div style="padding: 1.5rem; background: rgba(0, 102, 255, 0.05); border-radius: 16px; border: 1px solid var(--border-color);">
+                    {% if booking.ticket_type %}
+                    {# ── Ticket-type pricing ── #}
+                    <div class="d-flex justify-content-between mb-2" style="color: var(--text-secondary);">
+                        <span>Ticket: {{ booking.ticket_type.name }}</span>
+                        <span style="color: var(--text-primary); font-weight: 600;">€{{ booking.ticket_type.price }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3" style="color: var(--text-secondary);">
+                        <span>Quantity</span>
+                        <span style="color: var(--text-primary); font-weight: 600;">× {{ booking.ticket_quantity }}</span>
+                    </div>
+                    {% else %}
+                    {# ── Legacy per-person pricing ── #}
                     <div class="d-flex justify-content-between mb-2" style="color: var(--text-secondary);">
                         <span>{{ booking.participants }} × €{{ booking.session.price_per_person }}</span>
                         <span style="color: var(--text-primary); font-weight: 600;">€{{ booking.total_price }}</span>
@@ -428,6 +440,7 @@
                         <span>Service fee</span>
                         <span style="color: var(--text-primary); font-weight: 600;">€0.00</span>
                     </div>
+                    {% endif %}
                     <hr style="border-color: var(--border-color);">
                     <div class="d-flex justify-content-between align-items-center">
                         <strong style="color: var(--text-primary); font-size: 1.1rem;">Total</strong>

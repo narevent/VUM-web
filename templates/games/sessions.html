@@ -5,13 +5,12 @@
 {% block title %}Gaming Sessions - VUM Games{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
 <!--
 <section class="hero" style="padding: 120px 0 80px;">
     <div class="container">
         <div class="text-center">
-            <h1 style="font-size: 3.5rem; font-weight: 900; margin-bottom: 1rem; background: linear-gradient(135deg, #FFFFFF 0%, #A0AEC0 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">{{header.title}}</h1>
-            <p class="lead" style="color: var(--text-secondary); font-size: 1.2rem;">{{header.content}}</p>
+            <h1 ...>{{header.title}}</h1>
+            <p class="lead" ...>{{header.content}}</p>
         </div>
     </div>
 </section>
@@ -35,29 +34,38 @@
                             <button type="submit" class="btn btn-primary flex-grow-1">
                                 <span>Filter</span>
                             </button>
-                            <a href="{% url 'sessions_list' %}" class="btn btn-secondary">
-                                Clear
-                            </a>
+                            <a href="{% url 'sessions_list' %}" class="btn btn-secondary">Clear</a>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <!-- Sessions Grid -->
     <div class="row g-4">
         {% for session in page_obj %}
             <div class="col-lg-6 col-xl-4">
                 <div class="session-card">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
+                    <!-- Header row: name + collab badge -->
+                    <div class="d-flex justify-content-between align-items-start mb-1">
                         <h5 class="card-title mb-0" style="color: var(--text-primary); font-size: 1.25rem;">{{ session.name }}</h5>
                         <span class="session-badge">{{ session.collab }}</span>
                     </div>
-                    
+
+                    <!-- Event label (shown only when a session belongs to an event) -->
+                    {% if session.event %}
+                    <div class="mb-2">
+                        <small style="color: var(--primary-color); font-weight: 600;">
+                            <i class="fas fa-calendar-star me-1"></i>{{ session.event.name }}
+                        </small>
+                    </div>
+                    {% endif %}
+
                     <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">{{ session.description|truncatewords:20 }}</p>
-                    
+
                     <div class="row g-3 mb-3">
+                        <!-- Date & Time -->
                         <div class="col-6">
                             <div style="padding: 1rem; background: rgba(0, 102, 255, 0.05); border-radius: 12px; border: 1px solid var(--border-color);">
                                 <small style="color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">Date & Time</small>
@@ -65,17 +73,32 @@
                                 <small style="color: var(--text-secondary);">{{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}</small>
                             </div>
                         </div>
-                        
-                            <div class="col-6">
-                                <div style="padding: 1rem; background: rgba(0, 102, 255, 0.05); border-radius: 12px; border: 1px solid var(--border-color);">
+
+                        <!-- Price: show ticket range if event has ticket types, else legacy price -->
+                        <div class="col-6">
+                            <div style="padding: 1rem; background: rgba(0, 102, 255, 0.05); border-radius: 12px; border: 1px solid var(--border-color);">
+                                {% if session.has_ticket_types %}
+                                    {% with types=session.ticket_types %}
+                                    <small style="color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">Tickets from</small>
+                                    <strong style="color: var(--primary-color); font-size: 1.5rem; display: block;">
+                                        €{{ types.first.price }}
+                                    </strong>
+                                    <small style="color: var(--text-secondary);">{{ types.count }} option{{ types.count|pluralize }}</small>
+                                    {% endwith %}
+                                {% else %}
                                     <small style="color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">Price</small>
-                                    <strong style="color: var(--primary-color); font-size: 1.75rem; display: block;">{% if session.price_per_person > 0 %}€{{ session.price_per_person }}{% else %}Free{% endif %}</strong>
-                                    <small style="color: var(--text-secondary);">{% if session.price_per_person > 0 %}per person{% else %}for entrance{% endif %}</small>
-                                </div>
+                                    <strong style="color: var(--primary-color); font-size: 1.75rem; display: block;">
+                                        {% if session.price_per_person > 0 %}€{{ session.price_per_person }}{% else %}Free{% endif %}
+                                    </strong>
+                                    <small style="color: var(--text-secondary);">
+                                        {% if session.price_per_person > 0 %}per person{% else %}for entrance{% endif %}
+                                    </small>
+                                {% endif %}
                             </div>
-                        
+                        </div>
                     </div>
-                    
+
+                    <!-- Availability -->
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div>
                             <small style="color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">Available Spots</small>
@@ -89,20 +112,17 @@
                             {% endif %}
                         </div>
                     </div>
-                    
+
+                    <!-- CTA button -->
                     <div class="mt-3">
                         {% if not session.is_upcoming %}
-                            <button class="btn btn-secondary w-100" disabled>
-                                Session Passed
-                            </button>
+                            <button class="btn btn-secondary w-100" disabled>Session Passed</button>
                         {% elif session.is_full %}
-                            <button class="btn btn-secondary w-100" disabled>
-                                Fully Booked
-                            </button>
+                            <button class="btn btn-secondary w-100" disabled>Fully Booked</button>
                         {% else %}
                             {% if not session.private %}
                                 <a href="{% url 'book_session' session.id %}" class="btn btn-primary w-100">
-                                    <span>{{session.button}}</span>
+                                    <span>{{ session.button }}</span>
                                 </a>
                             {% endif %}
                         {% endif %}
@@ -122,7 +142,7 @@
             </div>
         {% endfor %}
     </div>
-    
+
     <!-- Pagination -->
     {% if page_obj.has_other_pages %}
     <div class="row mt-5">
@@ -137,13 +157,13 @@
                             <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; padding: 0.5rem 1rem;">Previous</a>
                         </li>
                     {% endif %}
-                    
+
                     <li class="page-item active">
                         <span class="page-link" style="background: var(--gradient-1); border: none; color: white; border-radius: 8px; padding: 0.5rem 1.5rem;">
                             Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
                         </span>
                     </li>
-                    
+
                     {% if page_obj.has_next %}
                         <li class="page-item">
                             <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; padding: 0.5rem 1rem;">Next</a>
