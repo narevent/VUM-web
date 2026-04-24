@@ -77,7 +77,7 @@ class GameSession(TranslatableModel):
     end_time = models.TimeField()
     max_participants = models.PositiveIntegerField(
         default=1,
-        validators=[MinValueValidator(1), MaxValueValidator(20)]
+        validators=[MinValueValidator(1), MaxValueValidator(250)]
     )
     # price_per_person is kept for backwards-compatibility and as a fallback
     # when no Event / TicketType is configured.
