@@ -94,11 +94,51 @@
         color: var(--primary-color);
     }
 
-    /* ── Timeslot rows ──────────────────────────────────────────── */
+    /* ── Timeslot body ──────────────────────────────────────────── */
     .timeslots-body {
         padding: 1rem 2rem 1.5rem;
     }
 
+    /* ── Day group ──────────────────────────────────────────────── */
+    .day-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .day-group:last-child {
+        margin-bottom: 0;
+    }
+
+    .day-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.6rem;
+    }
+
+    .day-header::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--border-color);
+    }
+
+    .day-date {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        white-space: nowrap;
+    }
+
+    .day-count {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        white-space: nowrap;
+    }
+
+    /* ── Timeslot rows ──────────────────────────────────────────── */
     .timeslot-row {
         display: flex;
         align-items: center;
@@ -125,28 +165,6 @@
 
     .timeslot-row.is-passed {
         opacity: 0.45;
-    }
-
-    /* Date block */
-    .ts-date {
-        min-width: 70px;
-        text-align: center;
-        flex-shrink: 0;
-    }
-
-    .ts-date-day {
-        font-size: 1.6rem;
-        font-weight: 900;
-        color: var(--text-primary);
-        line-height: 1;
-    }
-
-    .ts-date-month {
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        color: var(--primary-color);
-        letter-spacing: 1px;
     }
 
     /* Divider pip */
@@ -331,68 +349,77 @@
             </div>
         </div>
 
-        <!-- Timeslot rows -->
+        <!-- Timeslot rows grouped by day -->
         <div class="timeslots-body">
-            {% for session in event.upcoming_sessions %}
-            <div class="timeslot-row
-                {% if not session.is_upcoming %}is-passed
-                {% elif session.is_full %}is-full{% endif %}">
+            {% regroup event.upcoming_sessions by date as sessions_by_day %}
 
-                <!-- Date -->
-                <div class="ts-date">
-                    <div class="ts-date-day">{{ session.date|date:"d" }}</div>
-                    <div class="ts-date-month">{{ session.date|date:"M" }}</div>
+            {% for day in sessions_by_day %}
+            <div class="day-group">
+
+                <!-- Day header -->
+                <div class="day-header">
+                    <span class="day-date">{{ day.grouper|date:"l, M j" }}</span>
+                    <span class="day-count">{{ day.list|length }} session{{ day.list|length|pluralize }}</span>
                 </div>
 
-                <div class="ts-pip"></div>
+                <!-- Timeslot rows for this day -->
+                {% for session in day.list %}
+                <div class="timeslot-row
+                    {% if not session.is_upcoming %}is-passed
+                    {% elif session.is_full %}is-full{% endif %}">
 
-                <!-- Time -->
-                <div class="ts-time">
-                    <i class="fas fa-clock me-1" style="font-size:0.75rem; color:var(--primary-color);"></i>
-                    {{ session.start_time|time:"H:i" }} – {{ session.end_time|time:"H:i" }}
-                </div>
+                    <div class="ts-pip"></div>
 
-                <div class="ts-pip"></div>
+                    <!-- Time -->
+                    <div class="ts-time">
+                        <i class="fas fa-clock me-1" style="font-size:0.75rem; color:var(--primary-color);"></i>
+                        {{ session.start_time|time:"H:i" }} – {{ session.end_time|time:"H:i" }}
+                    </div>
 
-                <!-- Session name + collab -->
-                <div class="ts-name">
-                    {{ session.name }}
-                    {% if session.collab %}
-                    <small>{{ session.collab }}</small>
-                    {% endif %}
-                </div>
+                    <div class="ts-pip"></div>
 
-                <!-- Spots badge -->
-                {% if not session.is_upcoming %}
-                <span class="ts-spots">Passed</span>
-                {% elif session.is_full %}
-                <span class="ts-spots spots-full">
-                    <i class="fas fa-times-circle me-1"></i>Full
-                </span>
-                {% elif session.available_spots <= 2 %}
-                <span class="ts-spots spots-low">
-                    <i class="fas fa-exclamation-circle me-1"></i>{{ session.available_spots }} left
-                </span>
-                {% else %}
-                <!--
-                <span class="ts-spots spots-ok">
-                    {{ session.available_spots }}/{{ session.max_participants }} spots
-                </span>
-                -->
-                {% endif %}
+                    <!-- Session name + collab -->
+                    <div class="ts-name">
+                        {{ session.name }}
+                        {% if session.collab %}
+                        <small>{{ session.collab }}</small>
+                        {% endif %}
+                    </div>
 
-                <!-- CTA -->
-                <div class="ts-btn">
+                    <!-- Spots badge -->
                     {% if not session.is_upcoming %}
-                    <button class="btn btn-secondary btn-sm" disabled>Passed</button>
+                    <span class="ts-spots">Passed</span>
                     {% elif session.is_full %}
-                    <button class="btn btn-secondary btn-sm" disabled>Full</button>
-                    {% elif not session.private %}
-                    <a href="{% url 'book_session' session.id %}" class="btn btn-primary btn-sm">
-                        <span>{{ session.button|default:"Book" }}</span>
-                    </a>
+                    <span class="ts-spots spots-full">
+                        <i class="fas fa-times-circle me-1"></i>Full
+                    </span>
+                    {% elif session.available_spots <= 2 %}
+                    <span class="ts-spots spots-low">
+                        <i class="fas fa-exclamation-circle me-1"></i>{{ session.available_spots }} left
+                    </span>
+                    {% else %}
+                    <!--
+                    <span class="ts-spots spots-ok">
+                        {{ session.available_spots }}/{{ session.max_participants }} spots
+                    </span>
+                    -->
                     {% endif %}
+
+                    <!-- CTA -->
+                    <div class="ts-btn">
+                        {% if not session.is_upcoming %}
+                        <button class="btn btn-secondary btn-sm" disabled>Passed</button>
+                        {% elif session.is_full %}
+                        <button class="btn btn-secondary btn-sm" disabled>Full</button>
+                        {% elif not session.private %}
+                        <a href="{% url 'book_session' session.id %}" class="btn btn-primary btn-sm">
+                            <span>{{ session.button|default:"Book" }}</span>
+                        </a>
+                        {% endif %}
+                    </div>
+
                 </div>
+                {% endfor %}
 
             </div>
             {% empty %}
