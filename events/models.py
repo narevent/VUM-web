@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
@@ -50,6 +51,73 @@ class TicketType(models.Model):
 
     def __str__(self):
         return f"{self.event.name} — {self.name} (€{self.price})"
+
+
+class DiscountCode(models.Model):
+    DISCOUNT_TYPES = [
+        ('percentage', 'Percentage (%)'),
+        ('fixed', 'Fixed Amount (€)'),
+    ]
+
+    code = models.CharField(max_length=50, unique=True)
+    description = models.CharField(max_length=200, blank=True, help_text="Internal note about this code")
+    discount_type = models.CharField(max_length=20, choices=DISCOUNT_TYPES, default='percentage')
+    discount_value = models.DecimalField(
+        max_digits=8, decimal_places=2,
+        help_text="Percentage (0–100) or fixed euro amount to deduct"
+    )
+    applicable_events = models.ManyToManyField(
+        Event,
+        blank=True,
+        related_name='discount_codes',
+        help_text="Restrict to specific events. Leave empty to apply to all events/sessions."
+    )
+    max_uses = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text="Maximum total uses. Leave blank for unlimited."
+    )
+    uses_count = models.PositiveIntegerField(default=0, editable=False)
+    valid_from = models.DateTimeField(null=True, blank=True, help_text="Start of validity window (blank = no restriction)")
+    valid_until = models.DateTimeField(null=True, blank=True, help_text="End of validity window (blank = no expiry)")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        if self.discount_type == 'percentage':
+            return f"{self.code} ({self.discount_value}% off)"
+        return f"{self.code} (€{self.discount_value} off)"
+
+    def is_valid_for_session(self, session=None):
+        """Returns (bool, str) — whether this code can be used for the given session."""
+        if not self.is_active:
+            return False, "This discount code is inactive."
+
+        now = timezone.now()
+        if self.valid_from and now < self.valid_from:
+            return False, "This discount code is not yet active."
+        if self.valid_until and now > self.valid_until:
+            return False, "This discount code has expired."
+
+        if self.max_uses is not None and self.uses_count >= self.max_uses:
+            return False, "This discount code has reached its usage limit."
+
+        if session and self.applicable_events.exists():
+            if not session.event_id or not self.applicable_events.filter(id=session.event_id).exists():
+                return False, "This discount code is not valid for this event."
+
+        return True, "Valid"
+
+    def calculate_discount(self, price):
+        """Return the euro discount amount for a given price (capped at price)."""
+        price = Decimal(str(price))
+        if self.discount_type == 'percentage':
+            amount = price * (self.discount_value / Decimal('100'))
+        else:
+            amount = self.discount_value
+        return min(amount, price).quantize(Decimal('0.01'))
 
 
 class GameSession(TranslatableModel):
@@ -182,6 +250,16 @@ class Booking(models.Model):
     stripe_payment_intent_id = models.CharField(max_length=200, blank=True)
     payment_completed_at = models.DateTimeField(null=True, blank=True)
 
+    # Discount
+    discount_code = models.ForeignKey(
+        DiscountCode,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='bookings',
+    )
+    discount_amount = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
+
     def create_payment_intent(self):
         """Create Stripe payment intent"""
         if not settings.STRIPE_SECRET_KEY:
@@ -214,14 +292,12 @@ class Booking(models.Model):
         if not self.booking_reference:
             self.booking_reference = str(uuid.uuid4())[:8].upper()
 
-        # Price calculation:
-        # 1. If a TicketType is set → price = ticket_type.price × ticket_quantity
-        # 2. Fallback → legacy price_per_person × participants (existing behaviour)
         if self.ticket_type_id:
-            self.total_price = self.ticket_type.price * self.ticket_quantity
-            # Keep participants in sync with how many spots the tickets occupy
+            base_price = self.ticket_type.price * self.ticket_quantity
             self.participants = self.ticket_type.participant_count * self.ticket_quantity
         else:
-            self.total_price = self.participants * self.session.price_per_person
+            base_price = self.participants * self.session.price_per_person
+
+        self.total_price = max(Decimal('0.00'), base_price - self.discount_amount)
 
         super().save(*args, **kwargs)

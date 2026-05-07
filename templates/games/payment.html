@@ -434,11 +434,15 @@
                     {# ── Legacy per-person pricing ── #}
                     <div class="d-flex justify-content-between mb-2" style="color: var(--text-secondary);">
                         <span>{{ booking.participants }} × €{{ booking.session.price_per_person }}</span>
-                        <span style="color: var(--text-primary); font-weight: 600;">€{{ booking.total_price }}</span>
+                        <span style="color: var(--text-primary); font-weight: 600;">€{{ booking.session.price_per_person|floatformat:2 }}</span>
                     </div>
-                    <div class="d-flex justify-content-between mb-3" style="color: var(--text-secondary);">
-                        <span>Service fee</span>
-                        <span style="color: var(--text-primary); font-weight: 600;">€0.00</span>
+                    {% endif %}
+                    {% if booking.discount_amount %}
+                    <div class="d-flex justify-content-between mb-2" style="color: var(--text-secondary);">
+                        <span><i class="fas fa-tag me-1" style="color:#28a745;"></i>Discount
+                            {% if booking.discount_code %}({{ booking.discount_code.code }}){% endif %}
+                        </span>
+                        <span style="color: #28a745; font-weight: 600;">-€{{ booking.discount_amount }}</span>
                     </div>
                     {% endif %}
                     <hr style="border-color: var(--border-color);">

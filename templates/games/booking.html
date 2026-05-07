@@ -159,6 +159,27 @@
     .detail-row i {
         color: var(--primary-color);
     }
+
+    /* ── Discount code ───────────────────────────────────── */
+    .discount-input-group {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .discount-input-group input {
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+    }
+
+    .discount-feedback {
+        font-size: 0.85rem;
+        margin-top: 0.4rem;
+    }
+
+    .discount-row {
+        display: none;
+    }
 </style>
 {% endblock %}
 
@@ -295,6 +316,26 @@
                                 <div class="text-danger small mt-1">{{ form.special_requests.errors.0 }}</div>
                             {% endif %}
                         </div>
+
+                        <!-- Discount Code -->
+                        <div class="col-12">
+                            <label class="form-label">
+                                <i class="fas fa-tag me-1"></i>Discount Code
+                            </label>
+                            <div class="discount-input-group">
+                                <input type="text"
+                                       id="discountCodeInput"
+                                       class="form-control"
+                                       placeholder="Enter code"
+                                       autocomplete="off"
+                                       maxlength="50">
+                                <input type="hidden" name="discount_code" id="discountCodeHidden">
+                                <button type="button" id="applyDiscountBtn" class="btn btn-outline-primary">
+                                    Apply
+                                </button>
+                            </div>
+                            <div id="discountFeedback" class="discount-feedback"></div>
+                        </div>
                     </div>
 
                     <div class="mt-4 pt-4" style="border-top: 1px solid var(--border-color);">
@@ -369,6 +410,12 @@
                     </div>
                     {% endif %}
 
+                    <!-- Discount row (hidden until a valid code is applied) -->
+                    <div class="d-flex justify-content-between mb-2 discount-row" id="summaryDiscountRow" style="color: var(--text-secondary);">
+                        <span id="summaryDiscountLabel">Discount:</span>
+                        <span id="summaryDiscountAmount" style="color: #28a745; font-weight: 600;">-€0.00</span>
+                    </div>
+
                     <hr style="border-color: var(--border-color);">
                     <div class="d-flex justify-content-between align-items-center">
                         <strong style="color: var(--text-primary); font-size: 1.1rem;">Total:</strong>
@@ -392,6 +439,103 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const availableSpots = parseInt("{{ session.available_spots }}");
+
+    // ── Discount code logic (shared by both pricing modes) ─────────────
+    const discountInput   = document.getElementById('discountCodeInput');
+    const discountHidden  = document.getElementById('discountCodeHidden');
+    const applyBtn        = document.getElementById('applyDiscountBtn');
+    const feedback        = document.getElementById('discountFeedback');
+    const discountRow     = document.getElementById('summaryDiscountRow');
+    const discountAmtEl   = document.getElementById('summaryDiscountAmount');
+    const discountLabelEl = document.getElementById('summaryDiscountLabel');
+
+    let appliedDiscount = null;   // { type, value, label }
+    let discountApplied = false;
+
+    function applyDiscount(grossTotal) {
+        if (!appliedDiscount) return grossTotal;
+        let saving;
+        if (appliedDiscount.type === 'percentage') {
+            saving = grossTotal * (parseFloat(appliedDiscount.value) / 100);
+        } else {
+            saving = Math.min(parseFloat(appliedDiscount.value), grossTotal);
+        }
+        return Math.max(0, grossTotal - saving);
+    }
+
+    function showDiscountInSummary(grossTotal) {
+        if (!appliedDiscount) {
+            discountRow.style.display = 'none';
+            return;
+        }
+        const net    = applyDiscount(grossTotal);
+        const saving = (grossTotal - net).toFixed(2);
+        discountLabelEl.textContent = 'Discount (' + appliedDiscount.label + '):';
+        discountAmtEl.textContent   = '-€' + saving;
+        discountRow.style.display   = 'flex';
+    }
+
+    function removeDiscount() {
+        appliedDiscount        = null;
+        discountApplied        = false;
+        discountHidden.value   = '';
+        discountInput.value    = '';
+        discountInput.readOnly = false;
+        feedback.textContent   = '';
+        discountRow.style.display = 'none';
+        applyBtn.textContent   = 'Apply';
+        applyBtn.disabled      = false;
+        updateSummary();
+    }
+
+    applyBtn.addEventListener('click', function () {
+        if (discountApplied) { removeDiscount(); return; }
+
+        const code = discountInput.value.trim().toUpperCase();
+        if (!code) {
+            feedback.textContent = 'Please enter a discount code.';
+            feedback.style.color = 'var(--accent-color, #f00)';
+            return;
+        }
+
+        applyBtn.disabled    = true;
+        applyBtn.textContent = 'Checking…';
+
+        fetch('{% url "validate_discount_code" %}?code=' + encodeURIComponent(code) + '&session_id={{ session.id }}')
+            .then(r => r.json())
+            .then(data => {
+                applyBtn.disabled = false;
+
+                if (data.valid) {
+                    appliedDiscount        = { type: data.discount_type, value: data.discount_value, label: data.label };
+                    discountApplied        = true;
+                    discountHidden.value   = code;
+                    feedback.innerHTML     = '<i class="fas fa-check-circle me-1" style="color:#28a745;"></i>' + data.message;
+                    feedback.style.color   = '#28a745';
+                    discountInput.readOnly = true;
+                    applyBtn.textContent   = 'Remove';
+                } else {
+                    appliedDiscount      = null;
+                    discountApplied      = false;
+                    discountHidden.value = '';
+                    feedback.textContent = data.message;
+                    feedback.style.color = 'var(--accent-color, #f00)';
+                    applyBtn.textContent = 'Apply';
+                }
+                updateSummary();
+            })
+            .catch(() => {
+                applyBtn.disabled    = false;
+                applyBtn.textContent = 'Apply';
+                feedback.textContent = 'Could not validate code. Please try again.';
+                feedback.style.color = 'var(--accent-color, #f00)';
+            });
+    });
+
+    discountInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); applyBtn.click(); }
+    });
+    // ──────────────────────────────────────────────────────────────────
 
     {% if ticket_types %}
     // ── Ticket-type mode ────────────────────────────────────────────
@@ -424,17 +568,20 @@ document.addEventListener('DOMContentLoaded', function () {
     function updateSummary() {
         if (!selectedCard) return;
         const { price, name } = getCardData(selectedCard);
-        const total = (price * qty).toFixed(2);
+        const gross = price * qty;
+        const net   = applyDiscount(gross);
 
         summaryLabel.textContent = 'Ticket: ' + name;
         summaryPrice.textContent = '€' + price.toFixed(2);
         summaryQty.textContent   = qty;
-        totalPriceEl.textContent = '€' + total;
+        totalPriceEl.textContent = '€' + net.toFixed(2);
         qtyDisplay.textContent   = qty;
         qtyInput.value           = qty;
 
         decreaseQtyBtn.disabled = qty <= 1;
         increaseQtyBtn.disabled = qty >= maxQty(selectedCard);
+
+        showDiscountInSummary(gross);
     }
 
     ticketCards.forEach(function (card) {
@@ -488,12 +635,15 @@ document.addEventListener('DOMContentLoaded', function () {
     participantInput.style.display = 'none';
 
     function updateParticipants(count) {
-        participantInput.value        = count;
-        participantDisplay.textContent = count;
+        const gross = count * pricePerPerson;
+        const net   = applyDiscount(gross);
+        participantInput.value          = count;
+        participantDisplay.textContent  = count;
         summaryParticipants.textContent = count;
-        totalPriceEl.textContent      = '€' + (count * pricePerPerson).toFixed(2);
+        totalPriceEl.textContent        = '€' + net.toFixed(2);
         decreaseBtn.disabled = count <= 1;
         increaseBtn.disabled = count >= availableSpots;
+        showDiscountInSummary(gross);
     }
 
     decreaseBtn.addEventListener('click', function () {

@@ -240,6 +240,16 @@
                 </div>
                 {% endif %}
 
+                {% if booking.discount_amount %}
+                <div class="detail-item">
+                    <span class="detail-label">
+                        <i class="fas fa-tag" style="color:#28a745;"></i>Discount
+                        {% if booking.discount_code %}({{ booking.discount_code.code }}){% endif %}
+                    </span>
+                    <span class="detail-value" style="color:#28a745;">-€{{ booking.discount_amount }}</span>
+                </div>
+                {% endif %}
+
                 <div class="detail-item">
                     <span class="detail-label">
                         <i class="fas fa-euro-sign"></i>Total Price

@@ -9,7 +9,9 @@ from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 import stripe
-from .models import GameSession, Booking, TicketType
+from decimal import Decimal
+from django.db.models import F
+from .models import GameSession, Booking, TicketType, DiscountCode
 from .forms import BookingForm
 from sections.models import Header
 
@@ -103,6 +105,67 @@ def check_availability(request, session_id):
     })
 
 
+def validate_discount_code(request):
+    """AJAX endpoint — check a discount code and return discount parameters."""
+    code_str = request.GET.get('code', '').strip().upper()
+    session_id = request.GET.get('session_id')
+
+    if not code_str:
+        return JsonResponse({'valid': False, 'message': 'Please enter a discount code.'})
+
+    session = None
+    if session_id:
+        try:
+            session = GameSession.objects.select_related('event').get(id=session_id)
+        except GameSession.DoesNotExist:
+            pass
+
+    try:
+        discount = DiscountCode.objects.get(code__iexact=code_str)
+    except DiscountCode.DoesNotExist:
+        return JsonResponse({'valid': False, 'message': 'Invalid discount code.'})
+
+    is_valid, message = discount.is_valid_for_session(session=session)
+    if not is_valid:
+        return JsonResponse({'valid': False, 'message': message})
+
+    if discount.discount_type == 'percentage':
+        label = f"{discount.discount_value}% off"
+    else:
+        label = f"€{discount.discount_value} off"
+
+    return JsonResponse({
+        'valid': True,
+        'discount_type': discount.discount_type,
+        'discount_value': str(discount.discount_value),
+        'label': label,
+        'message': f"Discount applied: {label}",
+    })
+
+
+def _resolve_discount(code_str, session, ticket_type=None, ticket_quantity=1, participants=1):
+    """Validate a discount code and return (DiscountCode|None, Decimal discount_amount)."""
+    code_str = (code_str or '').strip().upper()
+    if not code_str:
+        return None, Decimal('0.00')
+
+    try:
+        dc = DiscountCode.objects.get(code__iexact=code_str)
+    except DiscountCode.DoesNotExist:
+        return None, Decimal('0.00')
+
+    is_valid, _ = dc.is_valid_for_session(session=session)
+    if not is_valid:
+        return None, Decimal('0.00')
+
+    if ticket_type:
+        base_price = ticket_type.price * ticket_quantity
+    else:
+        base_price = Decimal(str(participants)) * session.price_per_person
+
+    return dc, dc.calculate_discount(base_price)
+
+
 def book_session(request, session_id):
     """Booking view — supports both legacy (price_per_person) and ticket-type pricing."""
     session = get_object_or_404(
@@ -154,8 +217,17 @@ def book_session(request, session_id):
                 booking.session = session
                 booking.ticket_type = ticket_type
                 booking.ticket_quantity = ticket_quantity
-                # participants & total_price are computed in Booking.save()
+                booking.discount_code, booking.discount_amount = _resolve_discount(
+                    request.POST.get('discount_code'),
+                    session,
+                    ticket_type=ticket_type,
+                    ticket_quantity=ticket_quantity,
+                )
                 booking.save()
+                if booking.discount_code:
+                    DiscountCode.objects.filter(pk=booking.discount_code.pk).update(
+                        uses_count=F('uses_count') + 1
+                    )
 
                 _finalize_booking(request, booking, session)
                 return _redirect_after_booking(booking)
@@ -174,7 +246,17 @@ def book_session(request, session_id):
                         'ticket_types': ticket_types,
                     })
 
+                booking.discount_code, booking.discount_amount = _resolve_discount(
+                    request.POST.get('discount_code'),
+                    session,
+                    participants=booking.participants,
+                )
                 booking.save()
+                if booking.discount_code:
+                    DiscountCode.objects.filter(pk=booking.discount_code.pk).update(
+                        uses_count=F('uses_count') + 1
+                    )
+
                 _finalize_booking(request, booking, session)
                 return _redirect_after_booking(booking)
 
