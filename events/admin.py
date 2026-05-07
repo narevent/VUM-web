@@ -1,6 +1,6 @@
 from django.contrib import admin
 from parler.admin import TranslatableAdmin
-from .models import Event, TicketType, GameSession, Booking
+from .models import Event, TicketType, GameSession, Booking, DiscountCode
 
 
 # ── TicketType inline (shown inside Event) ────────────────────────────────────
@@ -55,12 +55,39 @@ class GameSessionAdmin(TranslatableAdmin):
     available_spots.short_description = 'Available Spots'
 
 
+# ── DiscountCode ──────────────────────────────────────────────────────────────
+
+@admin.register(DiscountCode)
+class DiscountCodeAdmin(admin.ModelAdmin):
+    list_display  = ['code', 'discount_type', 'discount_value', 'uses_count', 'max_uses',
+                     'valid_from', 'valid_until', 'is_active', 'created_at']
+    list_filter   = ['discount_type', 'is_active']
+    search_fields = ['code', 'description']
+    filter_horizontal = ['applicable_events']
+    readonly_fields = ['uses_count', 'created_at']
+
+    fieldsets = [
+        ('Code', {
+            'fields': ['code', 'description', 'is_active'],
+        }),
+        ('Discount', {
+            'fields': ['discount_type', 'discount_value'],
+        }),
+        ('Restrictions', {
+            'fields': ['applicable_events', 'max_uses', 'valid_from', 'valid_until'],
+        }),
+        ('Usage', {
+            'fields': ['uses_count', 'created_at'],
+        }),
+    ]
+
+
 # ── Booking ───────────────────────────────────────────────────────────────────
 
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):
     list_display  = ['customer_name', 'session', 'ticket_type', 'ticket_quantity',
-                     'participants', 'total_price', 'booking_reference',
+                     'participants', 'discount_code', 'total_price', 'booking_reference',
                      'payment_status', 'status', 'created_at']
     list_filter   = ['status', 'payment_status', 'session__date', 'ticket_type', 'created_at']
     search_fields = ['customer_name', 'customer_email', 'booking_reference']
@@ -75,7 +102,7 @@ class BookingAdmin(admin.ModelAdmin):
                        'participants', 'booking_reference', 'access_token'],
         }),
         ('Pricing', {
-            'fields': ['total_price'],
+            'fields': ['discount_code', 'discount_amount', 'total_price'],
         }),
         ('Status', {
             'fields': ['status', 'is_confirmed', 'payment_status',
