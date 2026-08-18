@@ -75,11 +75,27 @@ def sessions_list(request):
     # Standalone sessions that belong to no event
     standalone_sessions = base_qs.filter(event__isnull=True)
 
+    # When nothing upcoming matches, fall back to an overview of past sessions
+    past_sessions = []
+    if not event_cards and not standalone_sessions:
+        past_qs = (
+            GameSession.objects
+            .filter(date__lt=today, is_active=True)
+            .select_related('event')
+            .order_by('-date', '-start_time')
+        )
+        if date_from:
+            past_qs = past_qs.filter(date__gte=date_from)
+        if date_to:
+            past_qs = past_qs.filter(date__lte=date_to)
+        past_sessions = list(past_qs[:24])
+
     header = Header.objects.filter(page='sessions').first()
 
     context = {
         'event_cards':         event_cards,
         'standalone_sessions': standalone_sessions,
+        'past_sessions':       past_sessions,
         'date_from':           date_from,
         'date_to':             date_to,
         'header':              header,

@@ -264,6 +264,56 @@
         border: 1px solid var(--border-color);
         border-radius: 20px;
     }
+
+    /* ── Past sessions overview ─────────────────────────────────── */
+    .past-list {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 1.5rem 2rem;
+    }
+
+    .past-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        padding: 0.9rem 0;
+        border-bottom: 1px solid var(--border-color);
+        opacity: 0.7;
+    }
+
+    .past-row:last-child { border-bottom: none; }
+
+    .past-date {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        white-space: nowrap;
+        min-width: 110px;
+    }
+
+    .past-time {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        white-space: nowrap;
+    }
+
+    .past-name {
+        flex: 1;
+        min-width: 140px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .past-name small {
+        display: block;
+        font-weight: 400;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-top: 0.15rem;
+    }
 </style>
 {% endblock %}
 
@@ -302,6 +352,31 @@
         <p style="color: var(--text-secondary); margin-bottom: 2rem;">No gaming sessions match your criteria. Try adjusting your filters or check back soon.</p>
         <a href="{% url 'sessions_list' %}" class="btn btn-primary"><span>View All Sessions</span></a>
     </div>
+
+    <!-- ══ PAST SESSIONS OVERVIEW ═══════════════════════════════════ -->
+    {% if past_sessions %}
+    <div class="section-divider">Past Sessions</div>
+
+    <div class="past-list">
+        {% for session in past_sessions %}
+        <div class="past-row">
+            <span class="past-date">{{ session.date|date:"D, M j, Y" }}</span>
+            <div class="ts-pip"></div>
+            <span class="past-time">{{ session.start_time|time:"H:i" }} – {{ session.end_time|time:"H:i" }}</span>
+            <div class="ts-pip"></div>
+            <div class="past-name">
+                {{ session.name }}
+                {% if session.event %}
+                <small>{{ session.event.name }}</small>
+                {% elif session.collab %}
+                <small>{{ session.collab }}</small>
+                {% endif %}
+            </div>
+            <span class="ts-spots">Passed</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
     {% endif %}
 
     <!-- ══ EVENT CARDS ══════════════════════════════════════════════════ -->
