@@ -30,65 +30,79 @@ def send_email_async(subject, message, from_email, recipient_list):
     thread.daemon = True
     thread.start()
 
+def subscribe_to_newsletter(request):
+    """
+    Shared newsletter subscription handler.
+
+    Returns a JsonResponse for POSTs, or None when there is nothing to handle
+    so the caller can fall through to rendering its page.
+    """
+    if request.method != 'POST':
+        return None
+
+    email = request.POST.get('email', '').strip()
+    name = request.POST.get('name', '').strip()
+
+    if not email:
+        return JsonResponse({
+            'success': False,
+            'errors': {'email': ['Email is required.']}
+        }, status=400)
+
+    if Newsletter.objects.filter(email=email, is_active=True).exists():
+        return JsonResponse({
+            'success': False,
+            'errors': {'email': ['This email is already subscribed to our newsletter.']}
+        }, status=400)
+
+    try:
+        subscription = Newsletter.objects.create(email=email, name=name)
+        print(f"✓ Newsletter subscription created: {subscription.email}")
+
+        # Send confirmation email ASYNCHRONOUSLY (non-blocking)
+        send_email_async(
+            'Welcome to VUM Games Newsletter!',
+            f'Hi {name or "there"}!\n\n'
+            f'Thank you for subscribing to our newsletter. '
+            f'You\'ll now receive updates about new gaming sessions, events, and more!\n\n'
+            f'Stay tuned!\n'
+            f'The VUM Games Team',
+            settings.DEFAULT_FROM_EMAIL,
+            [email]
+        )
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Thank you for subscribing!'
+        })
+    except Exception as e:
+        print(f"✗ Error creating subscription: {e}")
+        return JsonResponse({
+            'success': False,
+            'errors': {'email': [str(e)]}
+        }, status=400)
+
+
+def newsletter(request):
+    """Standalone newsletter subscription page (shareable in posts)."""
+    response = subscribe_to_newsletter(request)
+    if response is not None:
+        return response
+
+    context = {
+        'header': Header.objects.filter(page='newsletter').first(),
+    }
+    return render(request, 'company/newsletter.html', context)
+
+
 def home(request):
     """Homepage with featured content and newsletter subscription"""
-    
-    # Handle newsletter subscription via AJAX
-    if request.method == 'POST':
-        # Check if it's an AJAX request
-        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-        
-        if is_ajax:
-            email = request.POST.get('email', '').strip()
-            name = request.POST.get('name', '').strip()
-            
-            if not email:
-                return JsonResponse({
-                    'success': False,
-                    'errors': {'email': ['Email is required.']}
-                }, status=400)
-            
-            # Check if email already exists
-            if Newsletter.objects.filter(email=email, is_active=True).exists():
-                return JsonResponse({
-                    'success': False,
-                    'errors': {'email': ['This email is already subscribed to our newsletter.']}
-                }, status=400)
-            
-            try:
-                # Create subscription
-                subscription = Newsletter.objects.create(
-                    email=email,
-                    name=name
-                )
-                
-                print(f"✓ Newsletter subscription created: {subscription.email}")
-                
-                # Send confirmation email ASYNCHRONOUSLY (non-blocking)
-                # This won't delay the response even if email fails
-                send_email_async(
-                    'Welcome to VUM Games Newsletter!',
-                    f'Hi {name or "there"}!\n\n'
-                    f'Thank you for subscribing to our newsletter. '
-                    f'You\'ll now receive updates about new gaming sessions, events, and more!\n\n'
-                    f'Stay tuned!\n'
-                    f'The VUM Games Team',
-                    settings.DEFAULT_FROM_EMAIL,
-                    [email]
-                )
-                
-                # Return success immediately without waiting for email
-                return JsonResponse({
-                    'success': True,
-                    'message': 'Thank you for subscribing!'
-                })
-            except Exception as e:
-                print(f"✗ Error creating subscription: {e}")
-                return JsonResponse({
-                    'success': False,
-                    'errors': {'email': [str(e)]}
-                }, status=400)
-    
+
+    # Newsletter subscriptions posted from the homepage block
+    response = subscribe_to_newsletter(request)
+    if response is not None:
+        return response
+
     # Regular GET request - display homepage
     header = Header.objects.filter(page='home').first()
     banners = Banner.objects.filter(page='home')
